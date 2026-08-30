@@ -1,31 +1,71 @@
 <p align="center">
-  <img src="apps/web/public/favicon.svg" width="96" alt="CurupiraCode mark" />
+  <img src="apps/web/public/favicon.svg" width="96" alt="Marca do CurupiraCode" />
 </p>
 
 # CurupiraCode
 
-English | [中文](README.zh.md)
+Português | [English](README.en.md) | [中文](README.zh.md)
 
-**Open AI, code under your control.**
+**IA aberta, código sob seu controle.**
 
-CurupiraCode is a local, open, plugin-first AI agent harness. It is an independent derivative of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), preserves its composable architecture powered by [Cordis](https://github.com/cordiverse/cordis), and adds a Brazilian identity, a Brazilian Portuguese experience, and integrations that do not lock users into one provider.
+O CurupiraCode é um harness de agentes de IA local, aberto e orientado a plugins. É um derivado independente do [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), preserva a arquitetura combinável baseada no [Cordis](https://github.com/cordiverse/cordis) e acrescenta identidade brasileira, experiência em português e integrações que não prendem o usuário a um único provedor.
 
-## Current state
+## Estado atual
 
-- Web interface with the CurupiraCode identity and local theme;
-- Brazilian Portuguese as the primary product experience;
-- built-in DuckDuckGo search with Bing fallback and Google News, with no additional key;
-- optional SearXNG support through an operator-controlled open-source instance;
-- compatibility with `@deepseek-ai/dsh-*` plugins and profiles during the transition;
-- `curupiracode` and `dsh` commands, with `dsh` retained as the legacy alias.
+- Interface web com a identidade e o tema locais do CurupiraCode;
+- Português do Brasil como experiência principal do produto;
+- busca DuckDuckGo embutida com fallback Bing e Google News, sem chave adicional;
+- suporte opcional a SearXNG por meio de uma instância open-source controlada pelo operador;
+- compatibilidade com plugins e perfis `@deepseek-ai/dsh-*` durante a transição;
+- comandos `curupiracode` e `dsh`, com `dsh` mantido como alias legado.
 
-The project is in developer preview. APIs and formats may still change.
+O projeto está em prévia para desenvolvedores. APIs e formatos ainda podem mudar.
 
-<a id="run"></a><a id="run-from-source"></a>
+<a id="o-que-tem-dentro"></a>
 
-## Run this checkout
+## O que tem dentro
 
-Install a Node.js version matching the `engines` field in [package.json](package.json), plus pnpm.
+**Núcleo de agente (host, composição Cordis)**
+
+- Harness de agente local-first: toda capacidade é uma linha de plugin; o processo host compõe registros, persistência e serviços sem dependência de nuvem.
+- Sessões com trajetória completa, conversas retomáveis e metas de conclusão na mesma sessão para objetivos longos.
+- Subagentes em segundo plano, orquestração de workflows multiagente e loops iterativos com agentes novos.
+- Seam de credenciais para segredos locais, além de fluxos de autorização OAuth iniciados direto da UI.
+- Sandbox de ferramentas com políticas de acesso a arquivos e pedidos de aprovação; o agente declara a permissão mínima que precisa.
+- Plugins dinâmicos (`@pluginId`): definir, executar, atualizar e reverter código host/cliente estendido a quente, a partir da sessão em execução.
+
+**Provedores de inteligência**
+
+- Modelos oficiais DeepSeek de fábrica.
+- Google Gemini por login de conta Google de consumidor — o adaptador conversa com o Antigravity CLI (`agy`) instalado e autenticado localmente, sem nenhuma chave de API para gerenciar; um transporte OAuth por conta Google (Code Assist) permanece como alternativa para implantações corporativas.
+- Qualquer endpoint compatível com OpenAI pelo provedor genérico, com esforço de raciocínio por modelo, políticas de retry e seletor de modelos.
+
+**Curupira Memória (segundo cérebro)**
+
+- Pacote de conhecimento local: ingestão de documentos, fatiamento em passagens e busca com proveniência completa (documento, trecho e offset).
+- Store SQLite no próprio computador, com vault endereçado por conteúdo — reingerir é barato e nunca duplica.
+- Extração de **PDF**, **DOCX**, **HTML** e texto puro; pensado para ler direto o vault do seu Obsidian.
+- Ferramentas prontas para o agente ingerir pastas e buscar nas suas anotações assim que instalado.
+
+**Web e conhecimento**
+
+- Busca embutida sem chave extra: DuckDuckGo com fallback Bing e Google News; SearXNG opcional por instância própria do operador.
+
+**Interface web (cliente)**
+
+- GUI local em `http://127.0.0.1:3080`, com português do Brasil como experiência principal, além de inglês e chinês.
+- Página de Modelos com onboarding de provedores, cartões de chave de API e de login que pesquisam até confirmar a conexão, e listagem ao vivo de provedores/modelos.
+- Identidade e tema oficial CurupiraCode, além do tema comunitário Cyberpunk Neon; visualizações de conversa, tabelas de trajetória e medição de contexto.
+
+**Linha de comando**
+
+- `curupiracode web` (e modo headless), com `dsh` mantido como alias legado para scripts existentes.
+
+<a id="rodando"></a>
+
+## Rodando deste checkout
+
+Instale uma versão do Node.js compatível com o campo `engines` do [package.json](package.json), mais o pnpm.
 
 ```sh
 pnpm install
@@ -33,56 +73,24 @@ pnpm run build
 pnpm curupiracode web
 ```
 
-The UI opens at `http://127.0.0.1:3080`. Pass `--no-open` to start without opening a browser.
+A UI abre em `http://127.0.0.1:3080`. Passe `--no-open` para iniciar sem abrir o navegador.
 
 ```sh
 pnpm curupiracode web --no-open
 ```
 
-## What's inside
+## Direção do projeto
 
-**Agent core (host, Cordis composition)**
+O [roadmap](ROADMAP.md) em português começa pela consolidação da interface e segue para o Curupira Memória, uma camada local de segundo cérebro ancorada nos materiais do usuário, uma extensão de painel lateral para o navegador, compatibilidade com ferramentas de agentes e extensões para ONLYOFFICE, LibreOffice e Microsoft Office. Veja [BRAND.md](BRAND.md) para a identidade visual e as regras de uso.
 
-- Local-first agent harness: every capability is a plugin row; the host process composes registries, persistence, and services without a cloud dependency.
-- Sessions with full trajectory, resumable conversations, and same-session completion goals for long-running objectives.
-- Background subagents, multi-agent workflow orchestration, and fresh-agent iterative loops.
-- Credential seam for local secrets plus OAuth authorization flows started straight from the UI.
-- Tool sandboxing with file-access policies and approval prompts; agents declare the minimum permission they need.
-- Dynamic plugins (`@pluginId`): define, run, update, and roll back hot-extended host/client code from the running session.
+## Compatibilidade e origem
 
-**Intelligence providers**
+Os namespaces internos seguem `@deepseek-ai/dsh-*` nesta fase, para que o ecossistema existente continue carregando sem migração destrutiva. Uma mudança futura para um namespace próprio do projeto virá com ferramentas e uma janela de compatibilidade. Veja [NOTICE.md](NOTICE.md) para a atribuição e a independência do projeto.
 
-- DeepSeek official models out of the box.
-- Google Gemini through a consumer Google login — the adapter talks to the locally installed, already-authenticated Antigravity CLI (`agy`), so there is no API key to manage; a Google-account OAuth transport (Code Assist) remains as fallback for enterprise deployments.
-- Any OpenAI-compatible endpoint through the generic provider, with per-model reasoning effort, retry policies, and a model picker.
+## Contribuir
 
-**Web & knowledge**
+Leia [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md) e a [documentação de arquitetura](docs/architecture.md). Novas integrações devem ser plugins, pedir as permissões mínimas e manter o usuário no controle das ações externas.
 
-- Built-in search with no extra key: DuckDuckGo with Bing fallback and Google News; optional SearXNG through an operator-controlled instance.
-- Knowledge packages: PDF and text extraction feeding a local passage store — the groundwork for Curupira Memória, the local second brain.
+## Licença
 
-**Web interface (client)**
-
-- Local GUI at `http://127.0.0.1:3080` with Brazilian Portuguese as the primary experience, plus English and Chinese.
-- Models page with provider onboarding, API-key and sign-in cards that poll until the connection is confirmed, and live provider/model listing.
-- CurupiraCode identity and official theme, plus the Cyberpunk Neon community theme; conversation views, trajectory tables, and context metering.
-
-**Command line**
-
-- `curupiracode web` (and headless mode), with `dsh` kept as a legacy alias for existing scripts.
-
-## Project direction
-
-The Portuguese [roadmap](ROADMAP.md) begins with interface consolidation and continues through Curupira Memória, a local second-brain layer grounded in user materials, a browser side-panel extension, agent-tool compatibility, and extensions for ONLYOFFICE, LibreOffice, and Microsoft Office. See [BRAND.md](BRAND.md) for the visual identity and usage rules.
-
-## Compatibility and origin
-
-Internal namespaces remain `@deepseek-ai/dsh-*` in this phase so the existing ecosystem continues to load without a destructive migration. A future move to a project-owned namespace will include tooling and a compatibility window. See [NOTICE.md](NOTICE.md) for attribution and project independence.
-
-## Contributing
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and the [architecture documentation](docs/architecture.md). New integrations should be plugins, request the minimum permissions, and keep users in control of external actions.
-
-## License
-
-[MIT](LICENSE). Third-party dependencies and licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+[MIT](LICENSE). Dependências de terceiros e suas licenças estão listadas em [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
