@@ -1,0 +1,53 @@
+/*
+ * Curupira Forest detail sheet, mounted for exactly the owning bundle lifetime.
+ * Only decoration that cannot ride theme tokens lives here: the webfont faces
+ * themselves (an @import is stylesheet-level, not a variable) and pseudo-element
+ * styling that no inline token can express. Everything else — palette and
+ * typefaces alike — belongs to the registered theme's token map.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Orbitron:wght@500;600;700;800&family=Share+Tech+Mono&display=swap');
+
+::selection {
+  background: rgba(106, 197, 135, 0.34);
+  color: #ffffff;
+}
+
+/* Forest haze behind the glass: related leaf greens provide depth while a
+   restrained folklore amber remains the only contrasting accent. */
+html {
+  background-color: #07140d;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 800px at 12% -8%, rgba(106, 197, 135, 0.14), transparent 60%),
+    radial-gradient(900px 680px at 104% 14%, rgba(214, 160, 74, 0.08), transparent 62%),
+    radial-gradient(1100px 900px at 50% 115%, rgba(47, 125, 76, 0.18), transparent 65%),
+    linear-gradient(rgba(106, 197, 135, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(106, 197, 135, 0.015) 1px, transparent 1px);
+  background-size: auto, auto, auto, 32px 32px, 32px 32px;
+  background-attachment: fixed;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(106, 197, 135, 0.42), rgba(47, 125, 76, 0.55));
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(106, 197, 135, 0.72), rgba(47, 125, 76, 0.82));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}

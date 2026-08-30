@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="curupiraTrail" x1="10" y1="9" x2="53" y2="55" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6AC587"/>
+      <stop offset="1" stop-color="#2F7D4C"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#07140D"/>
+  <path d="M49 13C43 7 35 5 27 7 16 9 8 19 8 32s8 23 19 25c8 2 16 0 22-6" stroke="url(#curupiraTrail)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M48 13h7v7" stroke="#6AC587" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="52.5" cy="48.5" r="3.5" fill="#2F7D4C"/>
+  <g fill="#D6A04A">
+    <ellipse cx="27" cy="27" rx="3.4" ry="5.7" transform="rotate(-28 27 27)"/>
+    <circle cx="30.7" cy="33" r="1.55"/><circle cx="27.6" cy="33.7" r="1.35"/><circle cx="24.8" cy="32.7" r="1.2"/>
+    <ellipse cx="38" cy="39" rx="3.4" ry="5.7" transform="rotate(152 38 39)"/>
+    <circle cx="34.3" cy="33" r="1.55"/><circle cx="37.4" cy="32.3" r="1.35"/><circle cx="40.2" cy="33.3" r="1.2"/>
+  </g>
+</svg>

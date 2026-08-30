@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-28-curupiracode-foundation.md
+2026-08-28-curupiracode-foundation.md: ff2c857f04e9f673aa7a421a0c464aa94116f2d2
+2026-08-28-curupiracode-foundation.zh.md: fdc7e219458a4fbdb1fd271fdd72c63f82059b80

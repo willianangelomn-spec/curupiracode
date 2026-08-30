@@ -1,0 +1,7 @@
+# Optional Profile Bundle: the CurupiraCode Forest browser theme. The row lands
+# after the stock ui-theme row in the web roster, so the theme service the
+# client half consumes is already composed; disabling the bundle removes the
+# theme, the typography, and the forced activation together.
+- insert:
+    - id: ui-theme-cyberpunk
+      name: '@deepseek-ai/dsh-client-ui-theme-cyberpunk'

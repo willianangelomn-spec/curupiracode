@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "CurupiraCode",
+  "short_name": "Curupira",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0e2718",
+  "background_color": "#07140d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
