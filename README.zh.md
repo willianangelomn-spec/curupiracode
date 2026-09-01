@@ -16,6 +16,7 @@ CurupiraCode 是一个本地运行、开放且由插件驱动的 AI agent harnes
 - 巴西葡萄牙语为主要体验；
 - 集成无需额外密钥的 DuckDuckGo 搜索、Bing 回退与 Google News；
 - 可选通过运营者控制的开源 SearXNG 实例进行搜索；
+- 提供 Chrome 与 Edge 扩展，包含侧边栏聊天、可审查自动化、表单辅助填写和可移植宏；
 - 过渡期内兼容 `@deepseek-ai/dsh-*` 插件和配置；
 - `curupiracode` 为主命令，`dsh` 为旧版兼容别名。
 
@@ -67,6 +68,14 @@ pnpm curupiracode web --no-open
 
 - 无需额外密钥的内置搜索：DuckDuckGo（Bing 回退）与 Google 新闻；可选由运维者自控的 SearXNG 实例。
 
+**Chrome 与 Edge 扩展**
+
+- 持久化侧边栏聊天，可由用户选择并限量加入当前页面的可见内容。
+- 自动化计划经过校验并提供可编辑预览；浏览器只执行用户批准的操作。
+- 辅助填写表单但不会自动提交，并阻止密码、验证码、银行卡与文件上传字段。
+- 可跨页面录制和回放可移植宏，数据保存在本机，且必须在最终提交前停止。
+- 源代码与安装说明位于 `apps/browser-extension`。
+
 **网页界面（客户端）**
 
 - `http://127.0.0.1:3080` 上的本地 GUI，以巴西葡萄牙语为主体验，另有英文与中文。
@@ -79,7 +88,7 @@ pnpm curupiracode web --no-open
 
 ## 项目方向
 
-[路线图](ROADMAP.md)从统一界面开始，随后推进以用户资料为依据的本地第二大脑 Curupira Memória、带侧边栏的浏览器扩展、agent 工具兼容性以及 ONLYOFFICE、LibreOffice 和 Microsoft Office 扩展。视觉身份和使用规则见 [BRAND.md](BRAND.md)。
+[路线图](ROADMAP.md)从统一界面开始，现已包含以用户资料为依据的本地第二大脑 Curupira Memória 和浏览器侧边栏扩展。后续将继续扩展 agent 工具兼容性，并开发 ONLYOFFICE、LibreOffice 和 Microsoft Office 扩展。视觉身份和使用规则见 [BRAND.md](BRAND.md)。
 
 ## 兼容性与来源
 

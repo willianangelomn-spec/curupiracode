@@ -16,6 +16,7 @@ CurupiraCode is a local, open, plugin-first AI agent harness. It is an independe
 - Brazilian Portuguese as the primary product experience;
 - built-in DuckDuckGo search with Bing fallback and Google News, with no additional key;
 - optional SearXNG support through an operator-controlled open-source instance;
+- Chrome and Edge extension with side-panel chat, reviewable automation, assisted forms, and portable macros;
 - compatibility with `@deepseek-ai/dsh-*` plugins and profiles during the transition;
 - `curupiracode` and `dsh` commands, with `dsh` retained as the legacy alias.
 
@@ -67,6 +68,14 @@ pnpm curupiracode web --no-open
 
 - Built-in search with no extra key: DuckDuckGo with Bing fallback and Google News; optional SearXNG through an operator-controlled instance.
 
+**Chrome and Edge extension**
+
+- Persistent side-panel chat with optional, bounded inclusion of visible content from the current page.
+- Automation with a validated plan and editable preview: only user-approved actions run in the browser.
+- Assisted form answering without automatic submission, blocking passwords, authentication codes, cards, and uploads.
+- Portable multi-page macro recording and replay, stored locally and required to stop before final submission.
+- Source code and installation instructions in `apps/browser-extension`.
+
 **Web interface (client)**
 
 - Local GUI at `http://127.0.0.1:3080` with Brazilian Portuguese as the primary experience, plus English and Chinese.
@@ -79,7 +88,7 @@ pnpm curupiracode web --no-open
 
 ## Project direction
 
-The Portuguese [roadmap](ROADMAP.md) begins with interface consolidation and continues through Curupira Memória, a local second-brain layer grounded in user materials, a browser side-panel extension, agent-tool compatibility, and extensions for ONLYOFFICE, LibreOffice, and Microsoft Office. See [BRAND.md](BRAND.md) for the visual identity and usage rules.
+The Portuguese [roadmap](ROADMAP.md) begins with interface consolidation and already includes Curupira Memória, a local second-brain layer grounded in user materials, and the browser side-panel extension. Development continues with broader agent-tool compatibility and extensions for ONLYOFFICE, LibreOffice, and Microsoft Office. See [BRAND.md](BRAND.md) for the visual identity and usage rules.
 
 ## Compatibility and origin
 

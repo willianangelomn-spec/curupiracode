@@ -16,6 +16,7 @@ O CurupiraCode é um harness de agentes de IA local, aberto e orientado a plugin
 - Português do Brasil como experiência principal do produto;
 - busca DuckDuckGo embutida com fallback Bing e Google News, sem chave adicional;
 - suporte opcional a SearXNG por meio de uma instância open-source controlada pelo operador;
+- extensão para Chrome e Edge com chat lateral, automação revisável, formulários assistidos e macros portáteis;
 - compatibilidade com plugins e perfis `@deepseek-ai/dsh-*` durante a transição;
 - comandos `curupiracode` e `dsh`, com `dsh` mantido como alias legado.
 
@@ -51,6 +52,14 @@ O projeto está em prévia para desenvolvedores. APIs e formatos ainda podem mud
 
 - Busca embutida sem chave extra: DuckDuckGo com fallback Bing e Google News; SearXNG opcional por instância própria do operador.
 
+**Extensão para Chrome e Edge**
+
+- Chat persistente no painel lateral, com inclusão opcional e limitada do conteúdo visível da página atual.
+- Automação com plano validado e prévia editável: somente as ações aprovadas pelo usuário são executadas no navegador.
+- Preenchimento assistido de formulários sem envio automático, bloqueando senhas, códigos de autenticação, cartões e uploads.
+- Gravação e reprodução de macros portáteis entre páginas, armazenadas localmente e com parada obrigatória antes do envio final.
+- Código-fonte e instruções de instalação em `apps/browser-extension`.
+
 **Interface web (cliente)**
 
 - GUI local em `http://127.0.0.1:3080`, com português do Brasil como experiência principal, além de inglês e chinês.
@@ -81,7 +90,7 @@ pnpm curupiracode web --no-open
 
 ## Direção do projeto
 
-O [roadmap](ROADMAP.md) em português começa pela consolidação da interface e segue para o Curupira Memória, uma camada local de segundo cérebro ancorada nos materiais do usuário, uma extensão de painel lateral para o navegador, compatibilidade com ferramentas de agentes e extensões para ONLYOFFICE, LibreOffice e Microsoft Office. Veja [BRAND.md](BRAND.md) para a identidade visual e as regras de uso.
+O [roadmap](ROADMAP.md) em português começa pela consolidação da interface e já inclui o Curupira Memória, uma camada local de segundo cérebro ancorada nos materiais do usuário, e a extensão de painel lateral para navegadores. A evolução segue com compatibilidade ampliada com ferramentas de agentes e extensões para ONLYOFFICE, LibreOffice e Microsoft Office. Veja [BRAND.md](BRAND.md) para a identidade visual e as regras de uso.
 
 ## Compatibilidade e origem
 
