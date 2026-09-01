@@ -531,6 +531,14 @@ export class SessionRuntime implements ISessions {
     return childId
   }
 
+  /** Permanently delete a session after Host-side teardown and durability. */
+  async delete(sessionId: SessionId): Promise<void> {
+    const result = await this.manager.delete(sessionId)
+    if (!result.ok) throw new Error(result.error.message)
+    if (this.list.getSnapshot().current === sessionId) this.clear()
+    this.projectList()
+  }
+
   /**
    * Resolve an Agent-scoped context view (use-and-discard).
    * @param id - session id (the agent identity — 1:1 same axis).

@@ -60,6 +60,8 @@ publicado pode ser reproduzido a partir da tag correspondente.
 
 Objetivo: oferecer um “segundo cérebro” local que aprende somente com materiais autorizados pelo usuário, mantém as fontes verificáveis e trabalha de forma autônoma dentro de limites explícitos.
 
+Estado atual: o núcleo local já combina SQLite FTS5 com embeddings neurais multilíngues opcionais, encontra materiais relacionados e orienta o agente a consultar o cofre proativamente com proveniência. O modelo é baixado no primeiro uso, reutilizado offline e tem fallback lexical. A próxima etapa deste marco é consolidar a interface visual de notas, backlinks e grafo no estilo Obsidian.
+
 ### Arquitetura local e aberta
 
 - criar um novo seam `ctx.knowledge`, sem ampliar artificialmente o `ctx.attachments` atual, que é especializado em imagens;
@@ -92,18 +94,29 @@ Critério de saída: uma instalação sem chaves importa arquivos reais, retoma 
 Objetivo: oferecer um painel lateral semelhante à categoria de assistentes como Claude in Chrome, mas com
 código aberto, backend selecionável e controle local.
 
+Estado atual: **primeiro protótipo funcional para Chrome e Edge**. A extensão Manifest V3 oferece conversa
+persistente com contexto opcional da página e um modo separado de automação. Ambos usam presets sem ferramentas
+de sistema; somente a automação produz um plano JSON, mostra a prévia e executa ações aprovadas. A ponte aceita
+somente o ID estável da extensão em loopback; streaming, pareamento por token efêmero, a variante Firefox e a
+publicação nas lojas permanecem neste marco.
+
 ### Primeira versão
 
-- painel lateral persistente para Chrome e Edge usando Manifest V3 e
+- [x] painel lateral persistente para Chrome e Edge usando Manifest V3 e
   [`chrome.sidePanel`](https://developer.chrome.com/docs/extensions/reference/api/sidePanel);
-- variante Firefox usando `sidebar_action`, pois a própria
+- [ ] variante Firefox usando `sidebar_action`, pois a própria
   [documentação da Mozilla](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Chrome_incompatibilities#sidebar_api)
   registra que as APIs de sidebar do Firefox e Chrome são incompatíveis;
-- enviar ao chat título, URL, texto selecionado e conteúdo legível da aba somente após gesto do usuário;
-- ações “resumir”, “explicar”, “comparar abas”, “extrair para tabela” e “preencher com prévia”;
-- citações que retornam à página e ao trecho de origem;
-- conexão autenticada com o CurupiraCode local, com token efêmero e pareamento visível;
-- `activeTab` e permissões opcionais por site; não solicitar `<all_urls>` por padrão.
+- [x] enviar título, URL, texto selecionado, conteúdo legível e controles da aba somente após gesto do usuário;
+- [x] planejar e apresentar prévia para `click`, `fill`, `select`, `check` e `scroll`;
+- [x] responder formulários com valores editáveis, aprovação por campo, confiança visível e envio sempre manual;
+- [x] gravar e reproduzir macros sem código em formulários de várias etapas, com exportação e importação;
+- [x] conversar, resumir e explicar com histórico restaurado diretamente no painel;
+- [ ] comparar abas e extrair para tabela com resultados persistentes no painel;
+- [ ] citações que retornam à página e ao trecho de origem;
+- [ ] conexão autenticada com token efêmero e pareamento visível; o protótipo atual usa origem estável,
+  loopback obrigatório e bloqueio separado dos RPCs privilegiados;
+- [x] `activeTab` sem `<all_urls>`; a extensão solicita somente acesso HTTP a `127.0.0.1` e `localhost`.
 
 ### Ponte local
 
@@ -115,8 +128,8 @@ sempre como permissão opcional e com manifesto instalado pelo aplicativo local.
 ### Segurança
 
 - separar leitura de página, navegação, clique e preenchimento em capacidades independentes;
-- mostrar domínio e ação antes de operações sensíveis;
-- bloquear envio silencioso de senha, cartão, token e conteúdo marcado como privado;
+- [x] mostrar domínio e ação antes de operações sensíveis;
+- [x] bloquear envio silencioso de senha, cartão, token de autenticação e upload;
 - manter log local exportável de ações do agente;
 - testar páginas com prompt injection e conteúdo hostil antes do lançamento público.
 

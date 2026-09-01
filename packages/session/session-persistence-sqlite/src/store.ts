@@ -157,6 +157,14 @@ export class SqliteStore implements PersistenceBackend<number> {
     return row === undefined ? undefined : sqliteRevision(this.storeIdentity, row)
   }
 
+  async deleteStored(id: SessionId, signal?: AbortSignal): Promise<boolean> {
+    await this.observe(signal)
+    validateSchemaForMutation(this.databaseConstructor, this.db, this.databasePath)
+    const result = this.db.prepare(sql('delete-session')).run(id)
+    signal?.throwIfAborted()
+    return result.changes > 0
+  }
+
   async loadStoredFrom(id: SessionId, fromSeq: number, signal?: AbortSignal): Promise<StoredSuffix | undefined> {
     await this.observe(signal)
     const snapshot = this.readTransaction(() => {

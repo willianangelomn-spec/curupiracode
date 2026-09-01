@@ -709,6 +709,9 @@ describe('SessionPersistenceSqlite edge behavior', () => {
     const preparation = await persistence.prepare(header.id)
     expect(preparation.session.header).toEqual(header)
     preparation[Symbol.dispose]()
+    await expect(persistence.delete(header.id)).resolves.toBe(true)
+    await expect(persistence.list()).resolves.toEqual([])
+    await expect(persistence.delete(header.id)).resolves.toBe(false)
     await ctx.fiber.dispose()
   })
 

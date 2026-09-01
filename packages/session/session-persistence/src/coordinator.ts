@@ -183,6 +183,9 @@ export interface PersistenceBackend<TornMarker = unknown> {
    */
   appendBatch(meta: SessionHeader, events: readonly SessionEvent[], isMaterialized: boolean): Promise<void>
 
+  /** Permanently remove the backend-owned state for one cold session. */
+  deleteStored?(id: SessionId, signal?: AbortSignal): Promise<boolean>
+
   /**
    * Make a crash repair durable: truncate the torn tail (iff
    * `tornMarker !== undefined`) and append `closers` (iff any). NOT required to
@@ -677,6 +680,33 @@ export class PersistenceCoordinator<TornMarker = unknown> {
       throw new TypeError('session event batch is not losslessly JSON-serializable because it contains non-JSON-serializable data')
     }
     return this.serialize(id, () => this.appendCore(id, batch))
+  }
+
+  /**
+   * Permanently remove a cold session, serialized behind all pending writes.
+   * A live Session must first be stopped by its AgentHandle owner so its final
+   * write-behind retirement cannot recreate the artifact after deletion.
+   */
+  async delete(id: SessionId, signal?: AbortSignal): Promise<boolean> {
+    await this.waitForRetirement(id, signal)
+    return this.serialize(id, async () => {
+      signal?.throwIfAborted()
+      if (this.ctx.sessions.get(id) !== undefined || this.liveHasId(id)) {
+        throw new Error(`cannot delete session "${id}" while it is live`)
+      }
+      this.preparations.invalidate(id)
+      this.states.delete(id)
+      if (this.backend.deleteStored === undefined) {
+        throw new Error(`${this.backend.name} does not support session deletion`)
+      }
+      return this.backend.deleteStored(id, signal)
+    }, signal)
+  }
+
+  /** Whether any exact live lifecycle still owns an id. */
+  private liveHasId(id: SessionId): boolean {
+    for (const session of this.live.keys()) if (session.id === id) return true
+    return false
   }
 
   private async appendCore(id: SessionId, events: readonly SessionEvent[]): Promise<void> {

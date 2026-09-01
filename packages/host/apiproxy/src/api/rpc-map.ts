@@ -14,6 +14,7 @@ import type { SettingsApi } from './settings.ts'
 import type { CredentialsApi } from './credentials.ts'
 import type { AuthorizationApi } from './authorization.ts'
 import type { LlmApi } from './llm.ts'
+import type { KnowledgeApi } from './knowledge.ts'
 import type { SubagentsApi } from './subagents.ts'
 import type { RpcResponse } from './rpc.ts'
 
@@ -30,6 +31,7 @@ export interface RpcMethodMap {
   'session.models': SessionsApi['models']
   'session.selectModel': SessionsApi['selectModel']
   'session.rename': SessionsApi['rename']
+  'session.delete': SessionsApi['delete']
   'session.fork': SessionsApi['fork']
   'session.prompt': SessionsApi['prompt']
   'session.attachment': SessionsApi['attachment']
@@ -78,6 +80,7 @@ export interface RpcMethodMap {
   'llm.providers': LlmApi['providers']
   'llm.models': LlmApi['models']
   'llm.discoverModels': LlmApi['discoverModels']
+  'knowledge.ingest': KnowledgeApi['ingest']
 }
 
 /** Business request payload of method K (reaches through the RpcRequest narrow form to payload). */

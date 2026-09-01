@@ -21,6 +21,11 @@ interface ApiTrustRequest {
   headers: IncomingHttpHeaders | Headers
 }
 
+/** Stable id derived from the public key in CurupiraCode's Chromium manifest. */
+export const CURUPIRA_BROWSER_EXTENSION_ID = 'ndfighammhdpfaejmadojjaaelmpadek'
+
+const CHROMIUM_EXTENSION_ID = /^[a-p]{32}$/
+
 function header(headers: IncomingHttpHeaders | Headers, name: string): string | undefined {
   if (headers instanceof Headers) return headers.get(name) ?? undefined
   const value = headers[name]
@@ -55,6 +60,48 @@ export function assertTrustedAuthority(entry: string): void {
   const entryUrl = parseAuthority(entry)
   if (entryUrl !== undefined && canonicalAuthority(entry, entryUrl) === entry.toLowerCase()) return
   throw new Error(`client-connection: trustedHosts entry ${JSON.stringify(entry)} is not a bare host[:port] authority`)
+}
+
+/**
+ * Assert one configured Chromium extension id.
+ * @param id - manifest-key-derived extension id.
+ */
+export function assertTrustedExtensionId(id: string): void {
+  if (CHROMIUM_EXTENSION_ID.test(id)) return
+  throw new Error(`client-connection: trustedExtensionIds entry ${JSON.stringify(id)} is not a Chromium extension id`)
+}
+
+/**
+ * Resolve an explicitly trusted extension origin for a loopback API request.
+ * This is a narrow CORS grant for foreground extension pages; WebSocket
+ * upgrades and non-loopback hosts continue through the ordinary trust fence.
+ * @param request - Node HTTP or Fetch request facts.
+ * @param trustedExtensionIds - manifest-key-derived ids accepted by this deployment.
+ * @returns the exact Origin header when trusted, otherwise undefined.
+ */
+export function trustedExtensionOrigin(
+  request: ApiTrustRequest,
+  trustedExtensionIds: readonly string[],
+): string | undefined {
+  const host = header(request.headers, 'host')
+  const origin = header(request.headers, 'origin')
+  if (host === undefined || origin === undefined) return undefined
+  const hostUrl = parseAuthority(host)
+  if (hostUrl === undefined || !isLoopbackHostname(hostUrl.hostname)) return undefined
+  try {
+    const originUrl = new URL(origin)
+    if (originUrl.protocol !== 'chrome-extension:'
+      || originUrl.username !== ''
+      || originUrl.password !== ''
+      || originUrl.port !== ''
+      || originUrl.pathname !== ''
+      || originUrl.search !== ''
+      || originUrl.hash !== ''
+      || origin !== `chrome-extension://${originUrl.hostname}`) return undefined
+    return trustedExtensionIds.includes(originUrl.hostname) ? origin : undefined
+  } catch {
+    return undefined
+  }
 }
 
 /**

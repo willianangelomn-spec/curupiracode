@@ -186,7 +186,12 @@ export const docxExtractor: KnowledgeExtractor = {
   },
   extract(content) {
     const part = readZipEntry(content, 'word/document.xml')
-    if (part === undefined) throw new Error('no word/document.xml part in the DOCX container')
+    // Rejected rather than thrown: `extract` is declared to return a Promise,
+    // so a synchronous throw would escape a caller that only attaches
+    // `.catch()` instead of awaiting inside a try block.
+    if (part === undefined) {
+      return Promise.reject(new Error('no word/document.xml part in the DOCX container'))
+    }
     const xml = new TextDecoder('utf-8').decode(part)
     const text = decodeEntities(
       xml

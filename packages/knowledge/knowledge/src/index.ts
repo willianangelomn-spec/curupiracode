@@ -17,6 +17,7 @@ import type {
   KnowledgeExtractor,
   KnowledgeIngestRequest,
   KnowledgeIngestResult,
+  KnowledgeRelation,
   KnowledgeSearchRequest,
   KnowledgeSearchResult,
   KnowledgeStore,
@@ -33,6 +34,7 @@ export type {
   KnowledgeIngestRequest,
   KnowledgeIngestResult,
   KnowledgePassage,
+  KnowledgeRelation,
   KnowledgeRegion,
   KnowledgeSearchRequest,
   KnowledgeSearchResult,
@@ -218,6 +220,15 @@ export class KnowledgeRuntime extends Service {
     return this.resolveStore().list(signal)
   }
 
+  /** Find materials semantically related to one stored document. */
+  async related(id: string, maxResults = 8, signal?: AbortSignal): Promise<readonly KnowledgeRelation[]> {
+    const store = this.resolveStore()
+    if (store.related === undefined) {
+      throw new KnowledgeError('the configured knowledge store has no semantic relation index', 'KNOWLEDGE_STORE_ERROR')
+    }
+    return (await store.related(id, maxResults, signal)).slice(0, maxResults)
+  }
+
   /**
    * Read one document's full extracted text, for verifying a citation in place.
    * @param id - the document's content hash.
@@ -357,3 +368,6 @@ function locatorFor(
   }
   return best
 }
+
+/** Mount the knowledge runtime as a Cordis plugin (bundle row entry point). */
+export default KnowledgeRuntime

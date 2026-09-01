@@ -1,10 +1,11 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { splitIntoPassages } from '@deepseek-ai/dsh-knowledge'
 import { LocalKnowledgeStore, toMatchExpression } from '../src/store.ts'
+import type { TextEmbedder } from '../src/embedder.ts'
 
 /**
  * The store is the claim that a fresh install can search its own material with
@@ -14,6 +15,20 @@ import { LocalKnowledgeStore, toMatchExpression } from '../src/store.ts'
  */
 
 const encoder = new TextEncoder()
+
+class FixtureEmbedder implements TextEmbedder {
+  readonly model = 'fixture-semantic-v1'
+
+  embed(texts: readonly string[]): Promise<readonly Float32Array[]> {
+    return Promise.resolve(texts.map((text) => {
+      const consumer = /garantia|consumidor|produto|defeito|comprador|proteção/i.test(text)
+      const garden = /jardim|planta|horta/i.test(text)
+      return Float32Array.from(consumer ? [1, 0] : garden ? [0, 1] : [0.7, 0.7])
+    }))
+  }
+
+  dispose(): Promise<void> { return Promise.resolve() }
+}
 
 /** Build a stored document plus seam-split passages, as `ingest` would. */
 function documentOf(id: string, name: string, text: string, origin?: string) {
@@ -58,7 +73,7 @@ describe('the local knowledge store', () => {
       'O prazo para reclamar de vício aparente é de noventa dias para produto durável.',
       'A reclamação formulada perante o fornecedor obsta a decadência até a resposta negativa.',
     ].join('\n\n')
-    const { document, passages } = documentOf('a1', 'cdc.md', text, '/docs/cdc.md')
+    const { document, passages } = documentOf('a1', 'cdc.md', text, 'vault://cdc.md')
     await expect(store.put(document, passages)).resolves.toEqual({ alreadyPresent: false })
 
     const found = await store.search({ query: 'decadência reclamação' })
@@ -66,7 +81,7 @@ describe('the local knowledge store', () => {
     const hit = found[0]!
     expect(hit.documentId).toBe('a1')
     expect(hit.documentName).toBe('cdc.md')
-    expect(hit.origin).toBe('/docs/cdc.md')
+    expect(hit.origin).toBe('vault://cdc.md')
     // The offsets must locate the passage inside the stored text, which is what
     // makes a citation checkable rather than merely plausible.
     expect(text.slice(hit.start, hit.end)).toBe(hit.text)
@@ -98,6 +113,24 @@ describe('the local knowledge store', () => {
     const only = await store.search({ query: 'locação', documentIds: ['e5'] })
     expect(only.every(passage => passage.documentId === 'e5')).toBe(true)
     expect(only.length).toBeGreaterThan(0)
+  })
+
+  it('finds meaning beyond shared keywords and builds document relations', async () => {
+    store.close()
+    store = new LocalKnowledgeStore({ root, Database: DatabaseSync, embedder: new FixtureEmbedder() })
+    await store.open()
+    const warranty = documentOf('semantic-1', 'garantia.md', 'Defeito em produto durável permite reparação sem custo.')
+    const rights = documentOf('semantic-2', 'direitos.md', 'A garantia legal protege o consumidor após a compra.')
+    const garden = documentOf('semantic-3', 'horta.md', 'Plantas de jardim precisam de água e luz.')
+    await store.put(warranty.document, warranty.passages)
+    await store.put(rights.document, rights.passages)
+    await store.put(garden.document, garden.passages)
+
+    const found = await store.search({ query: 'qual proteção jurídica possui o comprador?', maxResults: 2 })
+    expect(found.map(passage => passage.documentId)).toContain('semantic-1')
+    const related = await store.related('semantic-1', 2)
+    expect(related[0]?.documentId).toBe('semantic-2')
+    expect(related[0]?.score).toBeGreaterThan(related[1]?.score ?? -1)
   })
 
   it('keeps the original bytes retrievable and drops everything on removal', async () => {

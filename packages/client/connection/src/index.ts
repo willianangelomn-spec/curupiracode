@@ -7,7 +7,13 @@ import type { WebRoute, WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver'
 import { toFetchHandler } from '@deepseek-ai/dsh-host-apiproxy'
 import { API_PATH, HOST_EVENTS_PATH, MUX_EVENTS_PATH } from './api-path.ts'
 import { bridge, DEFAULT_MAX_REQUEST_BODY_BYTES } from './http-bridge.ts'
-import { assertTrustedAuthority, isTrustedApiRequest } from './api-request-trust.ts'
+import {
+  assertTrustedAuthority,
+  assertTrustedExtensionId,
+  CURUPIRA_BROWSER_EXTENSION_ID,
+  isTrustedApiRequest,
+  trustedExtensionOrigin,
+} from './api-request-trust.ts'
 import { HostConnectionService } from './rpc-host.ts'
 import { rejectWebSocketUpgrade, WebSocketDownlinks } from './websocket-downlink.ts'
 
@@ -57,14 +63,50 @@ export interface ConnectionConfig {
    * that is not a bare, canonical authority fails the plugin load.
    */
   trustedHosts?: string[]
+  /** Chromium extension ids allowed to issue POST RPC calls to loopback. */
+  trustedExtensionIds?: string[]
   /** Maximum buffered JSON body for every `/api` request. Default: 300 MiB. */
   maxRequestBodyBytes?: number
 }
 
 export const Config: z<ConnectionConfig> = z.object({
   trustedHosts: z.array(String).default([]),
+  trustedExtensionIds: z.array(String).default([CURUPIRA_BROWSER_EXTENSION_ID]),
   maxRequestBodyBytes: z.natural().min(1).default(DEFAULT_MAX_REQUEST_BODY_BYTES),
 })
+
+const EXTENSION_CORS_HEADERS = {
+  'access-control-allow-headers': 'content-type',
+  'access-control-allow-methods': 'POST, OPTIONS',
+  'access-control-max-age': '600',
+  vary: 'Origin',
+}
+
+function extensionCorsResponse(response: Response, origin: string): Response {
+  const headers = new Headers(response.headers)
+  headers.set('access-control-allow-origin', origin)
+  headers.set('vary', 'Origin')
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
+
+function writeExtensionPreflight(req: Parameters<WebRoute['handler']>[0], res: Parameters<WebRoute['handler']>[1], origin: string): void {
+  const requestedMethod = req.headers['access-control-request-method']
+  const requestedHeaders = (req.headers['access-control-request-headers'] ?? '')
+    .split(',')
+    .map(value => value.trim().toLowerCase())
+    .filter(Boolean)
+  if (requestedMethod !== 'POST' || requestedHeaders.some(header => header !== 'content-type')) {
+    res.writeHead(403)
+    res.end('forbidden')
+    return
+  }
+  res.writeHead(204, { ...EXTENSION_CORS_HEADERS, 'access-control-allow-origin': origin })
+  res.end()
+}
 
 /**
  * Methods gated to loopback even on a trusted-host deployment. Native dialogs
@@ -107,6 +149,10 @@ const PRIVILEGED_METHODS = new Set([
   'agentPreset.remove',
   'host.pickDirectory',
   'host.openPath',
+  // Permanent conversation deletion is intentionally local-only. A trusted
+  // LAN authority may use ordinary session APIs, but it must not erase the
+  // host's durable history without a real authentication layer.
+  'session.delete',
   'settings.describe',
   'settings.openDocument',
   'settings.update',
@@ -130,10 +176,12 @@ const PRIVILEGED_METHODS = new Set([
 export function apply(ctx: Context, config?: ConnectionConfig): void {
   // The Loader resolves schema defaults; hand-built test contexts may pass none.
   const trustedHosts = config?.trustedHosts ?? []
+  const trustedExtensionIds = config?.trustedExtensionIds ?? [CURUPIRA_BROWSER_EXTENSION_ID]
   const maxRequestBodyBytes = config?.maxRequestBodyBytes ?? DEFAULT_MAX_REQUEST_BODY_BYTES
   // Config boundary: a malformed entry fails the load loudly here rather than
   // silently authorizing its hostname prefix at request time.
   for (const entry of trustedHosts) assertTrustedAuthority(entry)
+  for (const id of trustedExtensionIds) assertTrustedExtensionId(id)
   if (ctx.get('apiProxy') !== undefined) assertImageBodyCapacity(ctx, maxRequestBodyBytes)
   const connection = new HostConnectionService(ctx, trustedHosts)
   const fetchHandler = connection.createSharedFetchHandler(API_PATH, {
@@ -162,12 +210,28 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
     kind: 'prefix',
     path: API_PATH,
     handler: async (req, res) => {
-      if (!isTrustedApiRequest(req, trustedHosts)) {
+      const extensionOrigin = trustedExtensionOrigin(req, trustedExtensionIds)
+      if (req.method === 'OPTIONS' && extensionOrigin !== undefined) {
+        writeExtensionPreflight(req, res, extensionOrigin)
+        return
+      }
+      if (extensionOrigin !== undefined && req.method !== 'POST') {
+        res.writeHead(405, { allow: 'POST, OPTIONS' })
+        res.end('method not allowed')
+        return
+      }
+      if (extensionOrigin === undefined && !isTrustedApiRequest(req, trustedHosts)) {
         res.writeHead(403)
         res.end('forbidden')
         return
       }
-      await bridge(req, res, fetchHandler, maxRequestBodyBytes)
+      await bridge(req, res, extensionOrigin === undefined
+        ? fetchHandler
+        : {
+          async fetch(request) {
+            return extensionCorsResponse(await fetchHandler.fetch(request), extensionOrigin)
+          },
+        }, maxRequestBodyBytes)
     },
   }
   ctx.effect(() => ctx.webServer.register(route), 'client-connection: /api route')

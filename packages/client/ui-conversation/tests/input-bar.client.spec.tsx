@@ -234,6 +234,16 @@ function attachmentOwner(slotCalls: readonly { key: string; owner: unknown }[]):
 }
 
 describe('image draft rail', () => {
+  it('opens a native image chooser and adds the selected images', () => {
+    const addImages = vi.fn(() => null)
+    const result = bench({ addImages })
+    const picker = result.view.container.querySelector('input[type="file"]') as HTMLInputElement
+    const image = new File([Uint8Array.of(1, 2, 3)], 'foto.png', { type: 'image/png' })
+    fireEvent.change(picker, { target: { files: [image] } })
+    expect(addImages).toHaveBeenCalledWith([image])
+    expect(picker.value).toBe('')
+  })
+
   it('collects clipboard files while preserving text from a mixed paste', () => {
     const addImages = vi.fn(() => null)
     const { textarea, shell } = bench({ addImages })

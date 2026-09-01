@@ -42,11 +42,20 @@ const NS = settingsNamespace('llm-gemini')
  * sign-in flow. The flow is offered even before a settings section exists,
  * because signing in is what makes the route worth configuring.
  * @param ctx - the plugin context carrying `ctx.llm`, `ctx.credentials`, and `ctx.authorization`.
- * @param config - the resolved plugin configuration (retry policy today).
+ * @param config - resolved retry policy and deterministic image request bounds.
  */
 export function apply(ctx: Context, config: Config): void {
   const retryPolicy = resolveRetryPolicy(config.retryPolicy ?? undefined, 'llm-gemini retryPolicy')
-  const adapter = new GeminiAdapter({ ctx, retryPolicy })
+  const adapter = new GeminiAdapter({
+    ctx,
+    retryPolicy,
+    resolveAttachments: () => ctx.get('attachments'),
+    imagePolicy: {
+      maxPixels: config.requestImagePixelBudget,
+      maxBytes: config.requestImageMaxBytes,
+    },
+    maxRequestImageBytes: config.maxRequestImageBytes,
+  })
 
   // One adapter instance owns the single `gemini` route.
   ctx.llm.registerAdapter([PROVIDER], adapter)
@@ -62,14 +71,14 @@ export function apply(ctx: Context, config: Config): void {
   ctx.llm.registerConfigurableProviders([directoryEntry])
 
   // Interrogate the Gemini endpoint for its models (the curated catalog here).
-  ctx.llm.registerModelDiscovery(NS, async (): Promise<readonly LlmDiscoveredModel[]> =>
+  ctx.llm.registerModelDiscovery(NS, (): Promise<readonly LlmDiscoveredModel[]> => Promise.resolve(
     GEMINI_MODELS.map(model => ({
       id: model.id,
       name: model.name,
       contextWindow: model.contextWindow,
-    })))
+    }))))
 
-  // User-settings document; the retry policy is the only configurable knob.
+  // User-settings document for retry and deterministic image request bounds.
   installSettingsSection(ctx, NS, Config, config, {
     setSource: () => {},
     onChange: () => {},
@@ -88,10 +97,12 @@ export function apply(ctx: Context, config: Config): void {
           clientId: clientId(),
           clientSecret: clientSecret(),
           signal: session.signal,
-          onUrl: (url) => session.notify({
-            message: 'Continue signing in to Google Gemini in your browser.',
-            url,
-          }),
+          onUrl: (url) => {
+            session.notify({
+              message: 'Continue signing in to Google Gemini in your browser.',
+              url,
+            })
+          },
         })
         await writeGrant(ctx, grant)
       },

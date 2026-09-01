@@ -73,6 +73,7 @@ function mount(overrides: Partial<WorkspaceBrowserProps> = {}) {
     searchResultLimit: 20,
     renameSession: vi.fn(async () => {}),
     forkSession: vi.fn(),
+    deleteSession: vi.fn(async () => {}),
     renameWorkspace: vi.fn(async () => {}),
     deleteWorkspace: vi.fn(async () => {}),
     archiveSession: vi.fn(async () => {}),
@@ -355,6 +356,24 @@ describe('WorkspaceBrowser', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: '单列表' }))
     expect(screen.getByText('kept-s')).toBeTruthy()
     expect(screen.queryByText('gone-s')).toBeNull()
+  })
+
+  it('requires confirmation before permanently deleting a session', async () => {
+    const deleteSession = vi.fn(async () => {})
+    mount({
+      useSessions: hook(sessionState([summary('teste-inutil', 1)])),
+      useWorkspaces: hook(workspaceState([workspace('alpha', ['teste-inutil'])])),
+      deleteSession,
+    })
+    fireEvent.click(screen.getByText('alpha'))
+    fireEvent.click(screen.getByRole('button', { name: '会话“teste-inutil”的操作' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '删除会话' }))
+    expect(deleteSession).not.toHaveBeenCalled()
+    expect(screen.getByText(/将永久删除“teste-inutil”/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '删除会话' }))
+    await waitFor(() => { expect(deleteSession).toHaveBeenCalledWith(sid('teste-inutil')) })
+    await waitFor(() => { expect(screen.queryByText(/将永久删除“teste-inutil”/)).toBeNull() })
   })
 
   it('logs and keeps the tree when the archive call rejects', async () => {

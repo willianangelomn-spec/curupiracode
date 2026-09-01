@@ -307,6 +307,19 @@ describe('JsonlSessionPersistence: durability and crash semantics', () => {
     expect(await ctx.sessionPersistence.readRaw(m.id)).toBeUndefined()
   })
 
+  it('permanently deletes the exact session artifact', async () => {
+    const m = meta('delete-me', '/work')
+    await ctx.sessionPersistence.create(m)
+    await ctx.sessionPersistence.append(m.id, oneTurnLog())
+    const path = rawLogPath(root, '/work', m.id)
+    expect((await stat(path)).isFile()).toBe(true)
+
+    await expect(ctx.sessionPersistence.delete(m.id)).resolves.toBe(true)
+    await expect(stat(path)).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(ctx.sessionPersistence.list()).resolves.not.toContainEqual(expect.objectContaining({ id: m.id }))
+    await expect(ctx.sessionPersistence.delete(m.id)).resolves.toBe(false)
+  })
+
   it('readRaw rejects a corrupt header line instead of exporting it', async () => {
     const m = meta('raw-corrupt', '/work')
     await ctx.sessionPersistence.create(m)

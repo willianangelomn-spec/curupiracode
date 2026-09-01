@@ -602,6 +602,17 @@ export class SessionManager {
     }
   }
 
+  /** Permanently delete one session and remove its local list projection. */
+  async delete(sessionId: SessionId): Promise<RpcResult<{ deleted: true }>> {
+    try {
+      const { result } = await this.api.sessions.delete({ sessionId })
+      if (result.ok) this.recordMutation({ kind: 'remove', sessionId })
+      return result
+    } catch (error: unknown) {
+      return transportError(error)
+    }
+  }
+
   /**
    * Insert-or-enrich a locally synthesized summary: a new id prepends; an
    * existing entry only gains fields it lacks (the session-added frame and the

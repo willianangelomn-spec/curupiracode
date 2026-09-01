@@ -28,9 +28,13 @@ const BASE_PATCH = join(REPO_ROOT, 'packages/bundle/base/cordis.patch.yml')
 const WEB_PATCH = join(REPO_ROOT, 'packages/bundle/web-app/cordis.patch.yml')
 const CODEX_PACKAGE_DIR = join(REPO_ROOT, 'packages/subagent/subagent-codex')
 const CLAUDE_CODE_PACKAGE_DIR = join(REPO_ROOT, 'packages/subagent/subagent-claude-code')
+const BROWSER_PROMPT_EXPECTED = join(REPO_ROOT, 'apps/cli/tests/snapshots/browser-extension/browser-planner-prompt.expected.md')
+const BROWSER_CHAT_PROMPT_EXPECTED = join(REPO_ROOT, 'apps/cli/tests/snapshots/browser-extension/browser-chat-prompt.expected.md')
 /** The installation anchor whose dependency surface the preset module fallback mirrors. */
 const INSTALL_ANCHOR = join(REPO_ROOT, 'apps/cli/package.json')
 const MINIMAL_PROMPT = 'You are a helpful software engineer assistant.'
+const BROWSER_PROMPT_START = 'You are Curupira Browser Planner.'
+const BROWSER_CHAT_PROMPT_START = 'You are Curupira Browser Chat'
 const MINIMAL_BASH_DESCRIPTION = `Run commands in a bash shell
 * When invoking this tool, the contents of the "command" parameter does NOT need to be XML-escaped.
 * You don't have access to the internet via this tool.
@@ -219,7 +223,7 @@ describe('the shipped Web composition', () => {
   it('supplies both shipped presets, and only those, from the system root', async () => {
     const listed = await ctx.agentPresets.list()
 
-    expect(listed.map(preset => preset.id).sort()).toEqual(['code', 'cordis', 'minimal', 'standard'])
+    expect(listed.map(preset => preset.id).sort()).toEqual(['browser', 'browser-chat', 'code', 'cordis', 'minimal', 'standard'])
     expect(listed.every(preset => preset.trust === 'system')).toBe(true)
     expect(ctx.agentPresets.defaultId).toBe('standard')
   })
@@ -237,7 +241,9 @@ describe('the shipped Web composition', () => {
       // depend on ripgrep being present on the machine.
       expect(toolNames(ctx, handle.agent).filter(name => name !== 'glob' && name !== 'grep')).toEqual([
         'ask_user_question', 'bash', 'create_goal', 'edit', 'exit_plan_mode',
-        'get_goal', 'interrupt_agent', 'job_kill', 'job_list', 'job_output', 'list_agents', 'ralph', 'read', 'read_image', 'send_message', 'skill',
+        'get_goal', 'interrupt_agent', 'job_kill', 'job_list', 'job_output',
+        'knowledge_documents', 'knowledge_ingest', 'knowledge_related', 'knowledge_search',
+        'list_agents', 'ralph', 'read', 'read_image', 'send_message', 'skill',
         'subagent', 'subagent_fork', 'todo_write', 'update_goal', 'web_search',
         'workflow', 'write',
       ])
@@ -262,6 +268,44 @@ describe('the shipped Web composition', () => {
         .toContain('Absolute path')
       expect(ctx.agentPresets.serviceFor(handle.agent, 'compaction')).toBeUndefined()
       expect(handle.agent.ctx.get('compaction')).toBeUndefined()
+    } finally {
+      await handle.dispose()
+    }
+  })
+
+  it('composes the browser planner without host tools', async () => {
+    const handle = await ctx.agents.create({
+      sessionId: SessionId('preset-browser'),
+      setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'browser').then(() => undefined),
+    })
+    try {
+      const assembly = await ctx.systemPrompt.assemble({ scope: handle.agent })
+      expect(assembly.sections).toEqual([{
+        name: 'deployment:persona',
+        text: (await readFile(BROWSER_PROMPT_EXPECTED, 'utf8')).trimEnd(),
+      }])
+      expect(assembly.sections[0]?.text).toMatch(BROWSER_PROMPT_START)
+      expect(assembly.tools).toEqual([])
+      expect(toolNames(ctx, handle.agent)).toEqual([])
+    } finally {
+      await handle.dispose()
+    }
+  })
+
+  it('composes browser chat without host tools', async () => {
+    const handle = await ctx.agents.create({
+      sessionId: SessionId('preset-browser-chat'),
+      setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'browser-chat').then(() => undefined),
+    })
+    try {
+      const assembly = await ctx.systemPrompt.assemble({ scope: handle.agent })
+      expect(assembly.sections).toEqual([{
+        name: 'deployment:persona',
+        text: (await readFile(BROWSER_CHAT_PROMPT_EXPECTED, 'utf8')).trimEnd(),
+      }])
+      expect(assembly.sections[0]?.text).toMatch(BROWSER_CHAT_PROMPT_START)
+      expect(assembly.tools).toEqual([])
+      expect(toolNames(ctx, handle.agent)).toEqual([])
     } finally {
       await handle.dispose()
     }

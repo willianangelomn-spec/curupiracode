@@ -4,13 +4,14 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import { Buffer } from 'node:buffer'
 import { mkdir, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname } from 'node:path'
 import { z as zod } from 'zod'
 import type { Context } from '@deepseek-ai/cordis'
 import { installModelSelection } from '@deepseek-ai/dsh-agent'
-import type { Agent, ModelSelection, ModelSelectionRef, AgentOptions, AgentStatus } from '@deepseek-ai/dsh-agent'
+import type { Agent, AgentHandle, ModelSelection, ModelSelectionRef, AgentOptions, AgentStatus } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-agent-presets/types'
 import { AttachmentError, admitEncodedImages } from '@deepseek-ai/dsh-attachment'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
@@ -24,6 +25,7 @@ import type { JsonValue, Session, SessionEvent, SessionEventMap, SessionHeader, 
 import type { SessionPersistence } from '@deepseek-ai/dsh-session-persistence'
 import { SessionQueryError, type SessionSearchCursor } from '@deepseek-ai/dsh-session-query'
 import { SubagentError } from '@deepseek-ai/dsh-subagent'
+import { KnowledgeError } from '@deepseek-ai/dsh-knowledge'
 import type { SubagentListEntry as CatalogSubagentListEntry } from '@deepseek-ai/dsh-subagent'
 import { isUserInvocable } from '@deepseek-ai/dsh-skill'
 import type { Workspace, WorkspaceRecord } from '@deepseek-ai/dsh-workspace'
@@ -126,6 +128,28 @@ export const DEFAULT_COLD_BLANK_PROBE_MAX_BYTES = 1024
 
 /** Conversation message event types (the pagination counting unit). */
 const MESSAGE_TYPES = new Set(['user/message', 'assistant/message'])
+
+/** Browser document upload bounds: decoded bytes stay local and extracted text is prompt-bounded. */
+const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
+const MAX_DOCUMENT_TEXT_CHARS = 120_000
+
+/** Strictly decode browser-produced base64 without accepting malformed or oversized payloads. */
+function decodeDocumentBase64(data: string): Uint8Array {
+  if (data.length > Math.ceil(MAX_DOCUMENT_BYTES / 3) * 4 + 4) {
+    throw new KnowledgeError('document exceeds the 20MB upload limit', 'KNOWLEDGE_EXTRACTION_FAILED')
+  }
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(data) || data.length % 4 !== 0) {
+    throw new KnowledgeError('document data is not valid base64', 'KNOWLEDGE_EXTRACTION_FAILED')
+  }
+  const decoded = Buffer.from(data, 'base64')
+  if (decoded.byteLength === 0 || decoded.byteLength > MAX_DOCUMENT_BYTES) {
+    throw new KnowledgeError('document is empty or exceeds the 20MB upload limit', 'KNOWLEDGE_EXTRACTION_FAILED')
+  }
+  // pdfjs deliberately rejects Node's Buffer subclass even though it extends
+  // Uint8Array. Copy into a plain Uint8Array so every extractor receives the
+  // transport-neutral byte type promised by the knowledge seam.
+  return Uint8Array.from(decoded)
+}
 
 /** Validate one prompt as a batch before publishing any durable image object. */
 async function durablePromptContent(ctx: Context, content: readonly PromptContentPart[]): Promise<ContentBlock[]> {
@@ -1068,6 +1092,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
   const presetSwitches = new Map<SessionId, Promise<unknown>>()
   /** Client-chosen identity creation/resume, deduplicated across concurrent retries. */
   const sessionCreations = new Map<SessionId, Promise<Agent>>()
+  /** Consumer capabilities for ordinary Agents created or resumed by this Host. */
+  const sessionHandles = new Map<SessionId, AgentHandle>()
   /** Serializes path ownership and explicit title checks with Workspace mutations. */
   let workspaceCreationChain = Promise.resolve()
   const pendingQuestions = new Map<RpcId, PendingQuestion>()
@@ -1597,11 +1623,13 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           // session's history was produced under that composition, and
           // rebuilding it differently would replay tool calls the model can no
           // longer make.
-          return (await ctx.agents.resume({
+          const handle = await ctx.agents.resume({
             resumeSessionId: sessionId,
             agentOptions: agentOptions(),
             setup: (await composeAgent(storedPreset)).setup,
-          })).agent
+          })
+          sessionHandles.set(sessionId, handle)
+          return handle.agent
         }
 
         try {
@@ -1610,7 +1638,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           throw new Error(`failed to ensure project directory "${cwd}": ${String(error)}`, { cause: error })
         }
         const composition = await composeAgent(presetId)
-        return (await ctx.agents.create({
+        const handle = await ctx.agents.create({
           sessionId,
           agentOptions: agentOptions(),
           meta: {
@@ -1618,7 +1646,9 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
             ...composition.agentPreset === undefined ? {} : { agentPreset: composition.agentPreset },
           },
           setup: composition.setup,
-        })).agent
+        })
+        sessionHandles.set(sessionId, handle)
+        return handle.agent
       })().catch((error: unknown) => {
         // Another Host entry path may have published the same identity while
         // this operation crossed an asynchronous persistence/filesystem step.
@@ -2262,6 +2292,64 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         }
       },
 
+      async delete(request, signal) {
+        const { sessionId } = request.payload
+        const persistence = ctx.get('sessionPersistence')
+        if (persistence === undefined) {
+          return err(request, {
+            code: 'internal',
+            message: 'session deletion is unavailable: this deployment mounts no session persistence service',
+            details: {},
+          })
+        }
+        const live = ctx.agents.get(sessionId)
+        const attached = ctx.sessions.get(sessionId)
+        if ((attached !== undefined && hasSubagentOwner(attached, live))
+          || (live !== undefined && hasSubagentOwner(live.session, live))) {
+          return err(request, apiRemoteSubagentOwnershipError(sessionId))
+        }
+        let stored: boolean
+        try {
+          stored = (await persistence.list(signal)).some(header => header.id === sessionId)
+        } catch (error: unknown) {
+          return err(request, {
+            code: 'internal',
+            message: `failed to inspect session "${sessionId}" before deletion: ${error instanceof Error ? error.message : String(error)}`,
+            details: {},
+          })
+        }
+        if (live === undefined && attached === undefined && !stored) {
+          return err(request, {
+            code: 'session-not-found',
+            message: `session "${sessionId}" not found`,
+            details: { sessionId },
+          })
+        }
+        const handle = sessionHandles.get(sessionId)
+        if (live !== undefined && handle === undefined) {
+          return err(request, {
+            code: 'agent-busy',
+            message: `session "${sessionId}" is live but is not owned by this Host`,
+            details: { reason: 'the live AgentHandle belongs to another Host consumer' },
+          })
+        }
+        try {
+          if (handle !== undefined) {
+            await handle.dispose()
+            sessionHandles.delete(sessionId)
+          }
+          await Promise.all(ctx.workspaceRegistry.list().map(workspace => workspace.detachSession(sessionId)))
+          await persistence.delete(sessionId, signal)
+          return ok(request, { deleted: true as const })
+        } catch (error: unknown) {
+          return err(request, {
+            code: 'internal',
+            message: `failed to delete session "${sessionId}": ${error instanceof Error ? error.message : String(error)}`,
+            details: {},
+          })
+        }
+      },
+
       async fork(request) {
         const { sessionId, atSeq } = request.payload
         let source: SessionReadState
@@ -2322,7 +2410,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         // plane, composing nothing would leave the child with no tools at all.
         const forkComposition = await composeAgent(resolveSessionPreset(source))
         try {
-          await ctx.agents.create({
+          const childHandle = await ctx.agents.create({
             sessionId: childId,
             seed: events.slice(0, cut),
             meta: {
@@ -2336,6 +2424,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
             agentOptions: agentOptions(),
             setup: forkComposition.setup,
           })
+          sessionHandles.set(childId, childHandle)
         } catch (error: unknown) {
           return err(request, {
             code: 'internal',
@@ -2913,6 +3002,53 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
       },
     },
 
+    knowledge: {
+      async ingest(request, signal) {
+        const knowledge = ctx.get('knowledge')
+        if (knowledge === undefined) {
+          return err(request, {
+            code: 'attachment-error',
+            message: 'Curupira Memory is not mounted in this installation.',
+            details: { reason: 'KNOWLEDGE_UNAVAILABLE' },
+          })
+        }
+        try {
+          signal.throwIfAborted()
+          const bytes = decodeDocumentBase64(request.payload.data)
+          const result = await knowledge.ingest({
+            content: bytes,
+            name: request.payload.name,
+            ...(request.payload.format === undefined ? {} : { format: request.payload.format }),
+          }, signal)
+          const extracted = await knowledge.text(result.id, signal)
+          const truncated = extracted.length > MAX_DOCUMENT_TEXT_CHARS
+          return ok(request, {
+            ...result,
+            name: request.payload.name,
+            text: truncated ? extracted.slice(0, MAX_DOCUMENT_TEXT_CHARS) : extracted,
+            truncated,
+          })
+        } catch (error: unknown) {
+          if (signal.aborted) {
+            return err(request, { code: 'cancelled', message: 'document upload was aborted', details: {} })
+          }
+          if (error instanceof KnowledgeError) {
+            return err(request, {
+              code: 'attachment-error',
+              message: error.message,
+              details: { reason: error.code },
+            })
+          }
+          console.error('[apiproxy] Curupira Memory upload failed:', error)
+          return err(request, {
+            code: 'attachment-error',
+            message: 'The document could not be added to Curupira Memory.',
+            details: { reason: 'KNOWLEDGE_UPLOAD_FAILED' },
+          })
+        }
+      },
+    },
+
     goals: {
       // Mutations only — the read side is the 'goal' session projection.
       // Every verb resolves the session's agent (agentFor: implicit cold
@@ -3285,7 +3421,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           if (credentials !== undefined) {
             try {
               configured = (await credentials.describeRecord(flow.key)).configured
-            } catch (error: unknown) {
+            } catch (_error: unknown) {
               // A flow whose credential store is absent is simply not signed in.
             }
           }
@@ -3342,7 +3478,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         const notice = await firstNotice
         return ok(request, {
           status: 'started',
-          ...notice.message === undefined ? {} : { message: notice.message },
+          message: notice.message,
           ...notice.url === undefined ? {} : { url: notice.url },
         })
       },

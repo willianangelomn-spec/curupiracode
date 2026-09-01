@@ -50,7 +50,9 @@ describe('the plain-text and Markdown extractor', () => {
     const markdown = '# Introdução\n\nTexto um.\n\n## Detalhes\n\nTexto dois.'
     const result = await textExtractor.extract(encoder.encode(markdown))
     expect(result.regions?.map(region => region.locator)).toEqual(['§ Introdução', '§ Detalhes'])
-    const second = result.regions?.[1]!
+    const second = result.regions?.[1]
+    expect(second).toBeDefined()
+    if (second === undefined) throw new Error('expected the second Markdown region')
     expect(markdown.slice(second.start, second.end)).toContain('Texto dois.')
   })
 

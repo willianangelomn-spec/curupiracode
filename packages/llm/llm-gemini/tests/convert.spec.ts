@@ -1,7 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import type { GenerateOptions, Message } from '@deepseek-ai/dsh-llm'
+import type { ImageAttachmentRef, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
 import { buildRequestBody, effortToBudget, GeminiStreamConverter } from '../src/convert.ts'
 import { GEMINI_MODELS, modelById } from '../src/models.ts'
+
+const imageRef: ImageAttachmentRef = {
+  attachmentId: 'sha256:image' as ImageAttachmentRef['attachmentId'],
+  mediaType: 'image/png',
+  bytes: 3,
+  width: 1,
+  height: 1,
+}
+
+const requestImage: RequestImageAttachment = {
+  variantId: 'variant:image' as RequestImageAttachment['variantId'],
+  attachment: imageRef,
+  data: Uint8Array.from([1, 2, 3]),
+  mediaType: 'image/png',
+  bytes: 3,
+  width: 1,
+  height: 1,
+  depth: 'uchar',
+  space: 'srgb',
+  hasAlpha: false,
+}
 
 function userMessage(text: string): Message {
   return {
@@ -17,7 +39,7 @@ function assistantToolCall(): Message {
     id: 'a1' as Message['id'],
     role: 'assistant',
     content: [{ type: 'tool-call', id: 'c1' as never, name: 'getWeather', arguments: '{"city":"Paris"}' }],
-    source: { kind: 'model', provider: 'gemini', model: 'gemini-2.5-flash' },
+    source: { kind: 'model', provider: 'gemini', model: 'gemini-3.1-pro-high' },
   } as unknown as Message
 }
 
@@ -33,25 +55,25 @@ function toolResult(): Message {
 function baseOptions(messages: Message[]): GenerateOptions {
   return {
     provider: 'gemini',
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.1-pro-high',
     messages,
-  } as GenerateOptions
+  }
 }
 
 describe('catalog', () => {
   it('lists curated models with context windows', () => {
     expect(GEMINI_MODELS.length).toBeGreaterThan(0)
-    expect(modelById('gemini-2.5-flash')?.contextWindow).toBe(1_048_576)
-    expect(modelById('gemini-2.5-pro')?.reasoning).toBe(true)
+    expect(modelById('gemini-3.1-pro-high')?.contextWindow).toBe(1_048_576)
+    expect(modelById('gemini-3.1-pro-high')?.inputModalities).toEqual(['text', 'image'])
   })
 })
 
 describe('effortToBudget', () => {
   it('returns undefined for non-reasoning models', () => {
-    expect(effortToBudget('high', false)).toBeUndefined()
+    expect(effortToBudget('high' as never, false)).toBeUndefined()
   })
   it('returns undefined when off or absent', () => {
-    expect(effortToBudget('off', true)).toBeUndefined()
+    expect(effortToBudget('off' as never, true)).toBeUndefined()
     expect(effortToBudget(undefined, true)).toBeUndefined()
   })
   it('maps levels to budgets', () => {
@@ -93,6 +115,27 @@ describe('buildRequestBody', () => {
     const body = buildRequestBody(options, undefined)
     expect(body.tools?.[0]?.functionDeclarations[0]?.name).toBe('ping')
   })
+
+  it('serializes a prepared image as a stable handle and Gemini inline data', () => {
+    const text = userMessage('describe')
+    const message = { ...text, content: [{ type: 'image' as const, attachment: imageRef }, ...text.content] }
+    const body = buildRequestBody(
+      baseOptions([message]),
+      undefined,
+      new Map([[imageRef.attachmentId, requestImage]]),
+    )
+    expect(body.contents[0]?.parts).toEqual([
+      { text: 'Image sha256:image; request image 1x1px.' },
+      { inlineData: { mimeType: 'image/png', data: 'AQID' } },
+      { text: 'describe' },
+    ])
+  })
+
+  it('rejects an image whose request version was not prepared', () => {
+    const text = userMessage('describe')
+    const message = { ...text, content: [{ type: 'image' as const, attachment: imageRef }, ...text.content] }
+    expect(() => buildRequestBody(baseOptions([message]), undefined)).toThrow(/was not prepared/)
+  })
 })
 
 describe('GeminiStreamConverter', () => {
@@ -104,12 +147,13 @@ describe('GeminiStreamConverter', () => {
     // block-start, text-delta, block-end
     expect(first.filter(c => c.type === 'text-delta').map(c => (c as { text: string }).text)).toEqual(['Hello'])
 
-    const second = converter.push({
+    converter.push({
       candidates: [{ content: { parts: [{ text: ' world' }] }, finishReason: 'STOP' }],
       usageMetadata: { promptTokenCount: 3, candidatesTokenCount: 5 },
     })
-    expect(second.find(c => c.type === 'usage')).toBeDefined()
-    const finish = converter.finish().find(c => c.type === 'finish')
+    const trailing = converter.finish()
+    expect(trailing.find(c => c.type === 'usage')).toBeDefined()
+    const finish = trailing.find(c => c.type === 'finish')
     expect(finish).toBeDefined()
     expect((finish as { reason: { kind: string } }).reason.kind).toBe('stop')
   })

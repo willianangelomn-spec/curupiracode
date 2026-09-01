@@ -316,6 +316,10 @@ export interface SessionsApi {
   rename(request: RpcRequest<{ sessionId: SessionId; title: string }>):
   Promise<RpcResponse<{ title: string; seq: number }>>
 
+  /** Permanently delete an ordinary session and its persisted log. */
+  delete(request: RpcRequest<{ sessionId: SessionId }>, signal: AbortSignal):
+  Promise<RpcResponse<{ deleted: true }>>
+
   /**
    * Sends a message. content is core's ContentBlock[] verbatim; mode maps 1:1 — queue→send, steer→steer.
    * A prompt whose content is exactly one text block starting with '/' is a slash command: the host

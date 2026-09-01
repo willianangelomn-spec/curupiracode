@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>CurupiraCode</title>
+    <link rel="stylesheet" href="sidepanel.css">
+  </head>
+  <body>
+    <header class="brand">
+      <img src="../icons/icon.svg" alt="" width="42" height="42">
+      <div><strong>Curupira<span>Code</span></strong><small>Automação no navegador</small></div>
+      <span id="connection" class="connection" aria-label="Estado da conexão"></span>
+    </header>
+
+    <nav class="workspace-tabs" role="tablist" aria-label="Modo do CurupiraCode">
+      <button id="chat-tab" class="active" type="button" role="tab" aria-selected="true" aria-controls="chat-view">Conversa</button>
+      <button id="automation-tab" type="button" role="tab" aria-selected="false" aria-controls="automation-view">Automação</button>
+    </nav>
+
+    <main>
+      <section id="chat-view" class="view chat-view" role="tabpanel" aria-labelledby="chat-tab">
+        <div class="chat-toolbar">
+          <label class="context-toggle"><input id="include-page" type="checkbox" checked> Incluir página atual</label>
+          <button id="new-chat" class="text-button" type="button">Nova conversa</button>
+        </div>
+
+        <div id="chat-messages" class="chat-messages" aria-live="polite">
+          <div class="chat-empty"><strong>Converse com a página</strong><span>Peça um resumo, tire dúvidas ou continue uma conversa sem sair da aba.</span></div>
+        </div>
+
+        <form id="chat-form" class="chat-composer">
+          <label class="sr-only" for="chat-input">Mensagem</label>
+          <textarea id="chat-input" maxlength="4000" rows="3" placeholder="Pergunte qualquer coisa sobre esta página…"></textarea>
+          <div id="chat-attachments" class="chat-attachments hidden" aria-live="polite"></div>
+          <div class="composer-footer">
+            <button id="chat-attach" class="attach-button" type="button" aria-label="Anexar arquivos" title="Anexar arquivos">📎</button>
+            <input id="chat-files" class="hidden" type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.docx,.txt,.md,.markdown,.html,.htm">
+            <span id="chat-context-label">A página será incluída</span>
+            <button id="chat-cancel" class="text-button hidden" type="button">Parar</button>
+            <button id="chat-send" class="send-button" type="submit" aria-label="Enviar mensagem">Enviar</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="automation-view" class="view hidden" role="tabpanel" aria-labelledby="automation-tab">
+        <section class="card page-card">
+          <div class="eyebrow">ABA AUTORIZADA</div>
+          <h1 id="page-title">Nenhuma página capturada</h1>
+          <p id="page-url">Clique em “Ler página” para compartilhar somente a aba atual.</p>
+          <button id="capture" class="secondary" type="button">Ler página</button>
+        </section>
+
+        <section class="task-section">
+          <label for="task">O que você quer fazer?</label>
+          <textarea id="task" maxlength="4000" rows="5" placeholder="Ex.: preencha o formulário com os dados que eu informar, mas não envie."></textarea>
+          <div class="quick-actions" aria-label="Ações rápidas">
+            <button type="button" data-task="Resuma esta página em português e não execute nenhuma ação.">Resumir</button>
+            <button type="button" data-task="Explique o conteúdo selecionado em português e não execute nenhuma ação.">Explicar seleção</button>
+            <button type="button" data-task="Identifique os campos deste formulário e proponha um plano de preenchimento sem enviar.">Mapear formulário</button>
+          </div>
+          <p class="privacy">A captura é enviada ao modelo configurado no seu CurupiraCode. Não informe senhas, cartão ou códigos de autenticação.</p>
+          <button id="answer-form" class="form-button" type="button">Responder formulário</button>
+          <button id="plan" class="primary" type="button">Planejar com Curupira</button>
+          <button id="cancel" class="secondary hidden" type="button">Cancelar</button>
+        </section>
+
+        <section class="card macro-card">
+          <div class="eyebrow">MACROS DE FORMULÁRIO</div>
+          <h2>Copiar um preenchimento</h2>
+          <p>Grave campos e botões de próxima etapa. O envio final nunca é reproduzido.</p>
+          <label class="sr-only" for="macro-name">Nome da macro</label>
+          <input id="macro-name" type="text" maxlength="120" placeholder="Nome da macro (opcional)">
+          <div class="macro-row">
+            <button id="macro-start" class="form-button" type="button">Copiar macro</button>
+            <button id="macro-finish" class="secondary" type="button" disabled>Terminar macro</button>
+            <button id="macro-cancel-recording" class="secondary" type="button" disabled>Cancelar</button>
+          </div>
+          <p id="macro-recording-status" class="macro-recording-status">Nenhuma gravação em andamento.</p>
+          <label for="macro-select">Macros salvas</label>
+          <select id="macro-select" class="macro-select"><option value="">Nenhuma macro salva</option></select>
+          <p id="macro-summary" class="macro-summary"></p>
+          <button id="macro-replay" class="primary" type="button" disabled>Preencher com esta macro</button>
+          <div class="macro-tools">
+            <button id="macro-export" type="button" disabled>Exportar</button>
+            <button id="macro-import" type="button">Importar</button>
+            <button id="macro-delete" class="danger-button" type="button" disabled>Apagar</button>
+          </div>
+          <input id="macro-file" class="hidden" type="file" accept="application/json,.json">
+        </section>
+
+        <section id="result" class="result hidden" aria-live="polite">
+          <div class="eyebrow">PRÉVIA OBRIGATÓRIA</div>
+          <p id="summary" class="summary"></p>
+          <p id="review-help" class="review-help hidden">Revise, edite e desmarque qualquer resposta que não queira preencher. O Curupira não clicará em Enviar.</p>
+          <ol id="actions" class="actions"></ol>
+          <label id="risk-confirmation" class="risk-confirmation hidden">
+            <input id="allow-risk" type="checkbox">
+            Confirmo as ações marcadas como sensíveis.
+          </label>
+          <button id="execute" class="execute" type="button">Executar ações aprovadas</button>
+        </section>
+      </section>
+
+      <p id="status" class="status" role="status"></p>
+
+      <details class="settings">
+        <summary>Conexão local</summary>
+        <label for="base-url">Endereço do CurupiraCode</label>
+        <div class="url-row"><input id="base-url" type="url" value="http://127.0.0.1:3080"><button id="save-url" type="button">Salvar</button></div>
+      </details>
+    </main>
+
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

@@ -2374,6 +2374,13 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
         if (options.dropSessionCreateResponse) throw new Error('fixture: dropped session.create response after publication')
         return ok(request, { sessionId: created.sessionId })
       },
+      delete: (request) => {
+        const index = sessions.findIndex(session => session.sessionId === request.payload.sessionId)
+        if (index >= 0) sessions.splice(index, 1)
+        logs.delete(request.payload.sessionId)
+        emitHost({ type: 'host/session-removed', sessionId: request.payload.sessionId })
+        return ok(request, { deleted: true as const })
+      },
       rename: (request) => {
         const missing = requireSession(request)
         if (missing !== undefined) return missing
@@ -3061,6 +3068,17 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
         models: fixtureModelGroups().flatMap(group => group.models.map(model => ({ id: model.id, name: model.name }))),
       }),
     },
+    knowledge: {
+      ingest: request => ok(request, {
+        id: 'fixture-document',
+        name: request.payload.name,
+        passageCount: 1,
+        alreadyPresent: false,
+        extractor: request.payload.format ?? 'text',
+        text: 'Fixture document text.',
+        truncated: false,
+      }),
+    },
     respond(message: ClientResponse): Promise<RpcReceipt> {
       // Same routing discipline as the host: rpcId first, then the payload's
       // audit correlation; a settled or unknown id is not-pending.
@@ -3183,6 +3201,7 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'session.list': return this.api.sessions.list(request)
       case 'session.search': return this.api.sessions.search(request, signal)
       case 'session.create': return this.api.sessions.create(request)
+      case 'session.delete': return this.api.sessions.delete(request, signal)
       case 'session.history': return this.api.sessions.history(request)
       case 'session.models': return this.api.sessions.models(request)
       case 'session.selectModel': return this.api.sessions.selectModel(request)
@@ -3235,6 +3254,7 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'llm.providers': return this.api.llm.providers(request)
       case 'llm.models': return this.api.llm.models(request)
       case 'llm.discoverModels': return this.api.llm.discoverModels(request, signal)
+      case 'knowledge.ingest': return this.api.knowledge.ingest(request, signal)
     }
   }
 

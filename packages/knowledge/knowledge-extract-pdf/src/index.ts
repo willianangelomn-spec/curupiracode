@@ -47,12 +47,14 @@ export const pdfExtractor: KnowledgeExtractor = {
     // module's startup cost.
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
     const task = pdfjs.getDocument({
-      data: content,
+      // pdfjs transfers/detaches the supplied ArrayBuffer. The knowledge seam
+      // still needs the original bytes after extraction to persist the source,
+      // so the extractor gives pdfjs its own disposable copy.
+      data: Uint8Array.from(content),
       // The extractor wants text, not rendering: skip the optional assets a
       // headless run cannot use anyway.
       disableFontFace: true,
       useSystemFonts: false,
-      isEvalSupported: false,
     })
     const document = await task.promise
     try {
@@ -78,7 +80,7 @@ export const pdfExtractor: KnowledgeExtractor = {
       }
       return { text: parts.join('\n\n'), ...regions.length > 0 ? { regions } : {} }
     } finally {
-      await document.destroy()
+      await task.destroy()
     }
   },
 }

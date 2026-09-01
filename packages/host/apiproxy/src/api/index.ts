@@ -17,6 +17,7 @@ import type { CredentialsApi } from './credentials.ts'
 import type { AuthorizationApi } from './authorization.ts'
 import type { LlmApi } from './llm.ts'
 import type { DownloadsApi } from './downloads.ts'
+import type { KnowledgeApi } from './knowledge.ts'
 import type { ClientResponse, RpcReceipt } from './rpc.ts'
 
 /** Root interface of the unified API. New client-request domain = one new file pair + one field here + one map row. */
@@ -33,6 +34,7 @@ export interface ApiProxy {
   credentials: CredentialsApi
   authorization: AuthorizationApi
   llm: LlmApi
+  knowledge: KnowledgeApi
   /** Host-only download surfaces (GET, no wire envelope); absent from IApiClient. */
   downloads: DownloadsApi
   /**
@@ -67,6 +69,7 @@ export type {
 } from './authorization.ts'
 export type { ConfigurableProviderView, DiscoveredModelView, LlmApi } from './llm.ts'
 export type { DownloadsApi } from './downloads.ts'
+export type { KnowledgeApi, KnowledgeUpload, KnowledgeUploadResult } from './knowledge.ts'
 export type { ApprovalResponsePayload } from './approvals.ts'
 
 export type { QuestionResponsePayload } from './questions.ts'

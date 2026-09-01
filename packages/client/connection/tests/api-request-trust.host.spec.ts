@@ -1,13 +1,34 @@
 /** Behavior of the /api browser-trust fence (rebinding + cross-site defense). */
 
 import { describe, expect, it } from 'vitest'
-import { assertTrustedAuthority, isTrustedApiRequest } from '../src/api-request-trust.ts'
+import {
+  assertTrustedAuthority,
+  assertTrustedExtensionId,
+  CURUPIRA_BROWSER_EXTENSION_ID,
+  isTrustedApiRequest,
+  trustedExtensionOrigin,
+} from '../src/api-request-trust.ts'
 
 function request(headers: Record<string, string | undefined>): { headers: Record<string, string | undefined> } {
   return { headers }
 }
 
 describe('isTrustedApiRequest', () => {
+  it('accepts only an explicitly listed Chromium extension on a loopback Host', () => {
+    const origin = `chrome-extension://${CURUPIRA_BROWSER_EXTENSION_ID}`
+    expect(trustedExtensionOrigin(request({ host: '127.0.0.1:3080', origin }), [CURUPIRA_BROWSER_EXTENSION_ID])).toBe(origin)
+    expect(trustedExtensionOrigin(request({ host: 'localhost:3080', origin }), [])).toBeUndefined()
+    expect(trustedExtensionOrigin(request({ host: 'harness.example:3080', origin }), [CURUPIRA_BROWSER_EXTENSION_ID])).toBeUndefined()
+    expect(trustedExtensionOrigin(request({ host: '127.0.0.1:3080', origin: 'https://example.com' }), [CURUPIRA_BROWSER_EXTENSION_ID])).toBeUndefined()
+  })
+
+  it('validates configured Chromium extension ids', () => {
+    expect(() => { assertTrustedExtensionId(CURUPIRA_BROWSER_EXTENSION_ID) }).not.toThrow()
+    for (const id of ['', 'abcdefghijklmnop', 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz', `${CURUPIRA_BROWSER_EXTENSION_ID}/x`]) {
+      expect(() => { assertTrustedExtensionId(id) }).toThrow(/not a Chromium extension id/)
+    }
+  })
+
   it('holds markerless requests to the same Host fence — a plain-HTTP browser read carries no markers', () => {
     // Over plain HTTP a browser attaches neither Origin nor Fetch-Metadata to
     // reads (EventSource, images, navigations), so a rebound-origin GET is

@@ -24,6 +24,9 @@
       "path": "../../llm/llm"
     },
     {
+      "path": "../../attachment/attachment"
+    },
+    {
       "path": "../../credentials/credentials"
     },
     {
@@ -31,6 +34,9 @@
     },
     {
       "path": "../../settings/settings"
+    },
+    {
+      "path": "../../runtime-diagnostics/invariants"
     },
     {
       "path": "../../util/timeout"

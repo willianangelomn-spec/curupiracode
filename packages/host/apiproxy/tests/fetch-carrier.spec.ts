@@ -44,6 +44,9 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
       async create(request) {
         return { rpcId: request.rpcId, result: { ok: true, value: { sessionId: 's-new' as never } } }
       },
+      async delete(request) {
+        return { rpcId: request.rpcId, result: { ok: true, value: { deleted: true as const } } }
+      },
       async history(request) {
         if (request.payload.sessionId === ('with-projections' as never)) {
           return {
@@ -271,6 +274,17 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
         return { rpcId: request.rpcId, result: { ok: true, value: {} } }
       },
     },
+    authorization: {
+      async list(request) {
+        return { rpcId: request.rpcId, result: { ok: true, value: { flows: [] } } }
+      },
+      async begin(request) {
+        return { rpcId: request.rpcId, result: { ok: true, value: { status: 'cancelled' as const } } }
+      },
+      async cancel(request) {
+        return { rpcId: request.rpcId, result: { ok: true, value: {} } }
+      },
+    },
     llm: {
       async providers(request) {
         return { rpcId: request.rpcId, result: { ok: true, value: { providers: [] } } }
@@ -280,6 +294,14 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
       },
       async discoverModels(request) {
         return { rpcId: request.rpcId, result: { ok: true, value: { models: [] } } }
+      },
+    },
+    knowledge: {
+      async ingest(request) {
+        return { rpcId: request.rpcId, result: { ok: true, value: {
+          id: 'document-1', name: request.payload.name, passageCount: 1,
+          alreadyPresent: false, extractor: 'text', text: 'document text', truncated: false,
+        } } }
       },
     },
     events: {

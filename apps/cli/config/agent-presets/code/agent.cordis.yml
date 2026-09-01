@@ -93,6 +93,10 @@
 - id: tool-skill
   name: '@deepseek-ai/dsh-tool-skill'
 
+# Curupira Memória belongs to this agent scope, not the process-global layer.
+- id: knowledge-tools
+  name: '@deepseek-ai/dsh-knowledge-tools'
+
 # ── goals ───────────────────────────────────────────────────────────────────
 
 # Only the model-facing tool. The goal SERVICE, its session driver, and the

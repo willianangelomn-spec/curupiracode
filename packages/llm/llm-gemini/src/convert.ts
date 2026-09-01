@@ -17,13 +17,15 @@ import type {
   StreamChunk,
   ToolSchema,
 } from '@deepseek-ai/dsh-llm'
-import { LlmError } from '@deepseek-ai/dsh-llm'
+import { LlmError, requestImageHandleText } from '@deepseek-ai/dsh-llm'
+import type { AttachmentId, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
 import type { GeminiBudget } from './types.ts'
 
 /** One Gemini content part; `thought` marks a reasoning (thinking) part. */
 interface GeminiPart {
   text?: string
   thought?: boolean
+  inlineData?: { mimeType: string; data: string }
   functionCall?: { name: string; args: unknown }
   functionResponse?: { name: string; response: unknown }
 }
@@ -74,6 +76,35 @@ function blockText(blocks: readonly ContentBlock[]): string {
   return out
 }
 
+/** Append every retained image in one content tree as Gemini inline media. */
+function appendImages(
+  blocks: readonly ContentBlock[],
+  images: ReadonlyMap<AttachmentId, RequestImageAttachment>,
+  parts: GeminiPart[],
+): void {
+  for (const block of blocks) {
+    if (block.type === 'tool-result') {
+      appendImages(block.content, images, parts)
+      continue
+    }
+    if (block.type !== 'image') continue
+    const image = images.get(block.attachment.attachmentId)
+    if (image === undefined) {
+      throw new LlmError(
+        `Gemini request image ${block.attachment.attachmentId} was not prepared.`,
+        'INVALID_REQUEST',
+      )
+    }
+    parts.push({ text: requestImageHandleText(image) })
+    parts.push({
+      inlineData: {
+        mimeType: image.mediaType,
+        data: Buffer.from(image.data).toString('base64'),
+      },
+    })
+  }
+}
+
 /** Translate one harness tool schema into a Gemini function declaration. */
 function toolToDecl(tool: ToolSchema): GeminiFunctionDecl {
   return { name: tool.name, description: tool.description, parameters: tool.parameters }
@@ -105,10 +136,14 @@ export function effortToBudget(effort: ReasoningEffortId | undefined, reasoning:
  * function name Gemini requires.
  * @param options - the harness request.
  * @param budget - resolved thinking budget, or undefined to disable thinking.
+ * @param images - exact request images retained for this call.
  * @returns the Gemini request body.
- * @throws {LlmError} code `UNSUPPORTED_CONTENT` when an image block is present (not yet supported).
  */
-export function buildRequestBody(options: GenerateOptions, budget: GeminiBudget): GeminiRequest {
+export function buildRequestBody(
+  options: GenerateOptions,
+  budget: GeminiBudget,
+  images: ReadonlyMap<AttachmentId, RequestImageAttachment> = new Map(),
+): GeminiRequest {
   const callNameById = new Map<string, string>()
   const systemParts: { text: string }[] = []
   const contents: GeminiContent[] = []
@@ -131,7 +166,8 @@ export function buildRequestBody(options: GenerateOptions, budget: GeminiBudget)
           parts.push({ thought: true, text: block.text })
           break
         case 'image':
-          throw new LlmError(`llm-gemini does not support image input yet (model ${options.model})`, 'UNSUPPORTED_CONTENT')
+          appendImages([block], images, parts)
+          break
         case 'tool-call': {
           callNameById.set(block.id, block.name)
           let args: unknown = {}
@@ -146,6 +182,7 @@ export function buildRequestBody(options: GenerateOptions, budget: GeminiBudget)
         case 'tool-result': {
           const name = callNameById.get(block.toolCallId) ?? 'tool'
           parts.push({ functionResponse: { name, response: { result: blockText(block.content) } } })
+          appendImages(block.content, images, parts)
           break
         }
       }
@@ -239,7 +276,7 @@ export class GeminiStreamConverter {
     if (this.sawToolCall) return { kind: 'tool-calls' }
     if (fr === 'MAX_TOKENS') return { kind: 'max-tokens' }
     if (fr === 'SAFETY' || fr === 'RECITATION' || fr === 'OTHER') {
-      return { kind: 'error', failure: { message: `Gemini stopped: ${fr ?? 'unknown'}`, code: 'PROVIDER' } }
+      return { kind: 'error', failure: { message: `Gemini stopped: ${fr}`, code: 'PROVIDER' } }
     }
     return { kind: 'stop' }
   }

@@ -27,7 +27,9 @@ function scriptedApi(overrides: {
   goals?: Partial<ApiProxy['goals']>
   settings?: Partial<ApiProxy['settings']>
   credentials?: Partial<ApiProxy['credentials']>
+  authorization?: Partial<ApiProxy['authorization']>
   llm?: Partial<ApiProxy['llm']>
+  knowledge?: Partial<ApiProxy['knowledge']>
   respond?: ApiProxy['respond']
 } = {}): ApiProxy {
   async function *empty<F>(): AsyncGenerator<RpcRequest<F>> { /* no frames */ }
@@ -38,6 +40,7 @@ function scriptedApi(overrides: {
       list: r => ok(r, { items: [] }),
       search: r => ok(r, { items: [], hasMore: false }),
       create: r => ok(r, { sessionId: sid('s-new') }),
+      delete: r => ok(r, { deleted: true as const }),
       history: r => ok(r, {
         events: [],
         hasMore: false,
@@ -122,11 +125,24 @@ function scriptedApi(overrides: {
       unset: err,
       ...overrides.credentials,
     },
+    authorization: {
+      list: r => ok(r, { flows: [] }),
+      begin: r => ok(r, { status: 'cancelled' as const }),
+      cancel: r => ok(r, {}),
+      ...overrides.authorization,
+    },
     llm: {
       providers: r => ok(r, { providers: [] }),
       models: r => ok(r, { groups: [], failures: [] }),
       discoverModels: err,
       ...overrides.llm,
+    },
+    knowledge: {
+      ingest: r => ok(r, {
+        id: 'document-1', name: r.payload.name, passageCount: 1,
+        alreadyPresent: false, extractor: 'text', text: 'document text', truncated: false,
+      }),
+      ...overrides.knowledge,
     },
     events: { mux: () => empty<MuxFrame>(), host: () => empty<HostFrame>(), ...overrides.events },
     respond: overrides.respond ?? (() => Promise.resolve({ accepted: false as const, reason: 'not-pending' as const })),
@@ -148,6 +164,23 @@ function recorderInto(seen: { method: string; payload: unknown }[]) {
 }
 
 describe('unary round trip', () => {
+  it('routes browser-selected documents through the Curupira Memory boundary', async () => {
+    let seen: unknown
+    const response = await client(scriptedApi({
+      knowledge: {
+        ingest: (request) => {
+          seen = request.payload
+          return ok(request, {
+            id: 'doc-md', name: request.payload.name, passageCount: 2,
+            alreadyPresent: false, extractor: 'text', text: '# Conteúdo', truncated: false,
+          })
+        },
+      },
+    })).knowledge.ingest({ name: 'notas.md', data: 'IyBDb250ZcO6ZG8=', format: 'md' })
+    expect(seen).toEqual({ name: 'notas.md', data: 'IyBDb250ZcO6ZG8=', format: 'md' })
+    expect(response.result).toMatchObject({ ok: true, value: { id: 'doc-md', text: '# Conteúdo' } })
+  })
+
   it('carries payload out and value back through the full wire form', async () => {
     let seen: RpcRequest<{ cursor?: string }> | undefined
     const api = scriptedApi({

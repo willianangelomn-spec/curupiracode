@@ -19,6 +19,7 @@ import {
   sessionCancelRequestSchema,
   sessionAttachmentRequestSchema,
   sessionCreateRequestSchema,
+  sessionDeleteRequestSchema,
   sessionForkRequestSchema,
   sessionHistoryRequestSchema,
   sessionListRequestSchema,
@@ -67,6 +68,7 @@ import {
   authorizationBeginRequestSchema, authorizationCancelRequestSchema, authorizationListRequestSchema,
 } from '../api/authorization.schema.ts'
 import { llmDiscoverModelsRequestSchema, llmModelsRequestSchema, llmProvidersRequestSchema } from '../api/llm.schema.ts'
+import { knowledgeIngestRequestSchema } from '../api/knowledge.schema.ts'
 import {
   subagentHistoryRequestSchema,
   subagentInterruptRequestSchema,
@@ -94,6 +96,7 @@ const UNARY_ROUTES: UnaryRoutes = {
   'session.list': { schema: sessionListRequestSchema, invoke: (api, r) => api.sessions.list(r) },
   'session.search': { schema: sessionSearchRequestSchema, invoke: (api, r, signal) => api.sessions.search(r, signal) },
   'session.create': { schema: sessionCreateRequestSchema, invoke: (api, r) => api.sessions.create(r) },
+  'session.delete': { schema: sessionDeleteRequestSchema, invoke: (api, r, signal) => api.sessions.delete(r, signal) },
   'session.history': { schema: sessionHistoryRequestSchema, invoke: (api, r) => api.sessions.history(r) },
   'session.models': { schema: sessionModelsRequestSchema, invoke: (api, r) => api.sessions.models(r) },
   'session.selectModel': { schema: sessionSelectModelRequestSchema, invoke: (api, r) => api.sessions.selectModel(r) },
@@ -146,6 +149,7 @@ const UNARY_ROUTES: UnaryRoutes = {
   'llm.providers': { schema: llmProvidersRequestSchema, invoke: (api, r) => api.llm.providers(r) },
   'llm.models': { schema: llmModelsRequestSchema, invoke: (api, r) => api.llm.models(r) },
   'llm.discoverModels': { schema: llmDiscoverModelsRequestSchema, invoke: (api, r, signal) => api.llm.discoverModels(r, signal) },
+  'knowledge.ingest': { schema: knowledgeIngestRequestSchema, invoke: (api, r, signal) => api.knowledge.ingest(r, signal) },
 }
 
 /** Route lookup that narrows an arbitrary path segment to a map key (single cast point for the string→key refinement). */

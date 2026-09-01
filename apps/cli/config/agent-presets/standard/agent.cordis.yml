@@ -86,6 +86,12 @@
 - id: tool-skill
   name: '@deepseek-ai/dsh-tool-skill'
 
+# Curupira Memória tools are agent-plane capabilities. Keeping them here rather
+# than in the host composition lets restricted presets (such as `browser`) stay
+# unable to read the filesystem or the user's vault.
+- id: knowledge-tools
+  name: '@deepseek-ai/dsh-knowledge-tools'
+
 # ── goals ───────────────────────────────────────────────────────────────────
 
 # Only the model-facing tool. The goal SERVICE, its session driver, and the

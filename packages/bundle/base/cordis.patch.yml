@@ -107,6 +107,22 @@
     - id: llm-gemini
       name: '@deepseek-ai/dsh-llm-gemini'
 
+    # Curupira Memória: local second brain. The knowledge runtime is the seam
+    # (ctx.knowledge); knowledge-local opens the SQLite FTS5 vault under the
+    # harness home; and the extractors read PDF/DOCX/HTML/text. Model-facing
+    # tools belong to agent presets, so restricted presets can remain tool-free.
+    - id: knowledge
+      name: '@deepseek-ai/dsh-knowledge'
+
+    - id: knowledge-local
+      name: '@deepseek-ai/dsh-knowledge-local'
+
+    - id: knowledge-extract-text
+      name: '@deepseek-ai/dsh-knowledge-extract-text'
+
+    - id: knowledge-extract-pdf
+      name: '@deepseek-ai/dsh-knowledge-extract-pdf'
+
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'
       config:

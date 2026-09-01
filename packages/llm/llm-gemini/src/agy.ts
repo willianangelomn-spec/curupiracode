@@ -10,9 +10,12 @@
  */
 
 import { spawn } from 'node:child_process'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
+import { join } from 'node:path'
 import { LlmError } from '@deepseek-ai/dsh-llm'
 import type { ContentBlock, GenerateOptions } from '@deepseek-ai/dsh-llm'
+import type { AttachmentId, ImageMediaType, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
 
 /** One parsed `agy --output-format json` run. */
 export interface AgyResult {
@@ -37,12 +40,34 @@ export function agyBinary(): string {
     ?? os.homedir() + '/.local/bin/agy'
 }
 
-/** Flatten text-bearing blocks (recursing into tool results) into one string. */
-function blockText(blocks: readonly ContentBlock[]): string {
+/** File extension accepted by Antigravity's workspace image reader. */
+function imageExtension(mediaType: ImageMediaType): string {
+  switch (mediaType) {
+    case 'image/png': return 'png'
+    case 'image/jpeg': return 'jpg'
+    case 'image/webp': return 'webp'
+    case 'image/gif': return 'gif'
+  }
+}
+
+/** Flatten model-visible blocks, preserving staged image positions. */
+function blockText(
+  blocks: readonly ContentBlock[],
+  imagePaths: ReadonlyMap<AttachmentId, string> | undefined,
+): string {
   let out = ''
   for (const block of blocks) {
     if (block.type === 'text') out += block.text
-    else if (block.type === 'tool-result') out += blockText(block.content)
+    else if (block.type === 'image') {
+      const path = imagePaths?.get(block.attachment.attachmentId)
+      if (path === undefined) {
+        throw new LlmError(
+          `agy image ${block.attachment.attachmentId} was not staged for the request`,
+          'INVALID_REQUEST',
+        )
+      }
+      out += `\nImagem anexada: @${path}\n`
+    } else if (block.type === 'tool-result') out += blockText(block.content, imagePaths)
   }
   return out
 }
@@ -52,7 +77,10 @@ function blockText(blocks: readonly ContentBlock[]): string {
  * consumes: system text first, then the conversation turns. Reasoning blocks
  * are internal scratch space and are skipped.
  */
-export function flattenPrompt(options: GenerateOptions): string {
+export function flattenPrompt(
+  options: GenerateOptions,
+  imagePaths?: ReadonlyMap<AttachmentId, string>,
+): string {
   const system: string[] = []
   const turns: string[] = []
   if (options.system !== undefined && options.system.length > 0) system.push(options.system)
@@ -64,13 +92,63 @@ export function flattenPrompt(options: GenerateOptions): string {
       continue
     }
     const who = message.role === 'assistant' ? 'Assistente' : 'Usuário'
-    const text = blockText(message.content)
+    const text = blockText(message.content, imagePaths)
     if (text.length > 0) turns.push(`${who}: ${text}`)
   }
   const sections: string[] = []
   if (system.length > 0) sections.push(system.join('\n\n'))
   if (turns.length > 0) sections.push(turns.join('\n\n'))
   return sections.join('\n\n---\n\n')
+}
+
+/** Staged Antigravity prompt and its exact temporary workspace directory. */
+export interface PreparedAgyPrompt {
+  /** Text prompt containing `@path` references at each durable image position. */
+  prompt: string
+  /** Directory granted to the Antigravity subprocess. */
+  addDirs: readonly string[]
+  /** Remove the request-owned temporary files. Safe after partial preparation. */
+  dispose: () => Promise<void>
+}
+
+/**
+ * Materialize deterministic request images in a private temporary directory
+ * and build the `@path` prompt Antigravity understands.
+ * @param options - bounded provider-neutral request.
+ * @param images - exact request images retained for this call.
+ * @returns prompt, allowed directory, and an idempotent cleanup operation.
+ */
+export async function prepareAgyPrompt(
+  options: GenerateOptions,
+  images: ReadonlyMap<AttachmentId, RequestImageAttachment>,
+): Promise<PreparedAgyPrompt> {
+  if (images.size === 0) {
+    return { prompt: flattenPrompt(options), addDirs: [], dispose: () => Promise.resolve() }
+  }
+  const directory = await mkdtemp(join(os.tmpdir(), 'dsh-gemini-'))
+  let disposed = false
+  const dispose = async (): Promise<void> => {
+    if (disposed) return
+    disposed = true
+    await rm(directory, { recursive: true, force: true })
+  }
+  try {
+    const imagePaths = new Map<AttachmentId, string>()
+    let ordinal = 0
+    for (const [attachmentId, image] of images) {
+      options.signal?.throwIfAborted()
+      const path = join(directory, `image-${++ordinal}.${imageExtension(image.mediaType)}`)
+      await writeFile(path, image.data, { mode: 0o600, signal: options.signal })
+      imagePaths.set(attachmentId, path)
+    }
+    return { prompt: flattenPrompt(options, imagePaths), addDirs: [directory], dispose }
+  } catch (error: unknown) {
+    await dispose().catch(() => {
+      // The preparation error remains authoritative; the OS can reclaim an
+      // unlinked request directory if cleanup itself is unavailable.
+    })
+    throw error
+  }
 }
 
 /**
@@ -85,15 +163,17 @@ export function generateViaAgy(options: {
   binary: string
   model: string
   prompt: string
+  addDirs?: readonly string[]
   signal?: AbortSignal | undefined
 }): Promise<AgyResult> {
-  const { binary, model, prompt, signal } = options
+  const { binary, model, prompt, addDirs = [], signal } = options
   return new Promise((resolve, reject) => {
     const child = spawn(binary, [
       '-p', prompt,
       '--output-format', 'json',
       '--model', model,
       '--disable-slash-commands',
+      ...addDirs.flatMap(directory => ['--add-dir', directory]),
     ], {
       signal,
       stdio: ['ignore', 'pipe', 'pipe'],

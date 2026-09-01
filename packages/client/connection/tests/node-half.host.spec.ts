@@ -10,6 +10,7 @@ import type { ApiProxy } from '@deepseek-ai/dsh-host-apiproxy/api'
 import type { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import { RpcId, type ClientRequest } from '@deepseek-ai/dsh-host-apiproxy/api'
 import type { WebServer, WebRoute, WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver'
+import { CURUPIRA_BROWSER_EXTENSION_ID } from '../src/api-request-trust.ts'
 import { API_PATH, apply, HOST_EVENTS_PATH, inject, MUX_EVENTS_PATH, type HostConnectionHandle } from '../src/index.ts'
 import { DEFAULT_MAX_REQUEST_BODY_BYTES } from '../src/http-bridge.ts'
 
@@ -57,12 +58,16 @@ function fakeRawPost(headers: Record<string, string>, url: string, body: string)
 }
 
 /** Response recorder compatible with both the fence's short-circuit and the bridge. */
-function fakeResponse(): { response: ServerResponse; state: { status?: number; body?: unknown } } {
-  const state: { status?: number; body?: unknown } = {}
+function fakeResponse(): { response: ServerResponse; state: { status?: number; body?: unknown; headers?: Record<string, string> } } {
+  const state: { status?: number; body?: unknown; headers?: Record<string, string> } = {}
   const chunks: Buffer[] = []
   const response = Object.assign(new EventEmitter(), {
     writableEnded: false,
-    writeHead(value: number) { state.status = value; return this },
+    writeHead(value: number, headers?: Record<string, string>) {
+      state.status = value
+      if (headers !== undefined) state.headers = headers
+      return this
+    },
     write(value: string | Uint8Array) { chunks.push(Buffer.from(value)); return true },
     end(this: { writableEnded: boolean }, value?: unknown) {
       if (typeof value === 'string' || value instanceof Uint8Array) chunks.push(Buffer.from(value))
@@ -75,7 +80,7 @@ function fakeResponse(): { response: ServerResponse; state: { status?: number; b
   return { response, state }
 }
 
-async function mounted(config?: { trustedHosts?: string[] }): Promise<{
+async function mounted(config?: { trustedHosts?: string[]; trustedExtensionIds?: string[] }): Promise<{
   routes: WebRoute[]
   upgrades: WebUpgradeRoute[]
   dispose: () => Promise<void>
@@ -119,6 +124,46 @@ describe('connection node half', () => {
     await expect(fiber).rejects.toThrow(/not a bare host\[:port\] authority/)
     expect(routes).toHaveLength(0)
     expect(upgrades).toHaveLength(0)
+  })
+
+  it('fails the load on a malformed trustedExtensionIds entry', async () => {
+    const routes: WebRoute[] = []
+    const ctx = new Context()
+    ctx.provide('webServer', fakeHttpServer(routes, []) as WebServer)
+    ctx.provide('apiProxy', {} as unknown as ApiProxy)
+    const fiber = ctx.plugin({ inject: [...inject], apply }, { trustedExtensionIds: ['not-an-extension'] })
+    await expect(fiber).rejects.toThrow(/not a Chromium extension id/)
+    expect(routes).toHaveLength(0)
+  })
+
+  it('answers CORS preflight only for the shipped extension on loopback', async () => {
+    const { routes, dispose } = await mounted()
+    const origin = `chrome-extension://${CURUPIRA_BROWSER_EXTENSION_ID}`
+    const allowed = fakeResponse()
+    const request = fakeRequest({
+      host: '127.0.0.1:3080',
+      origin,
+      'access-control-request-method': 'POST',
+      'access-control-request-headers': 'content-type',
+    })
+    request.method = 'OPTIONS'
+    await routes[0]!.handler(request, allowed.response)
+    expect(allowed.state.status).toBe(204)
+    expect(allowed.state.headers).toMatchObject({
+      'access-control-allow-origin': origin,
+      'access-control-allow-methods': 'POST, OPTIONS',
+    })
+
+    const denied = fakeResponse()
+    const impostor = fakeRequest({
+      host: '127.0.0.1:3080',
+      origin: 'chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      'access-control-request-method': 'POST',
+    })
+    impostor.method = 'OPTIONS'
+    await routes[0]!.handler(impostor, denied.response)
+    expect(denied.state.status).toBe(403)
+    await dispose()
   })
 
   it('registers one HTTP route plus one upgrade route per downlink and removes all three with the fiber', async () => {
@@ -176,6 +221,7 @@ describe('connection node half', () => {
     // passed), but each privileged method stays loopback-only and 403s.
     for (const method of [
       'host.pickDirectory', 'host.openPath',
+      'session.delete',
       'settings.describe', 'settings.openDocument', 'settings.update', 'settings.replace', 'settings.mutate',
       'credentials.describe', 'credentials.set', 'credentials.unset',
       'llm.discoverModels',

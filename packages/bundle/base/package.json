@@ -119,7 +119,12 @@
     "@deepseek-ai/dsh-web-search-duckduckgo": "workspace:^",
     "@deepseek-ai/dsh-web-search-searxng": "workspace:^",
     "@deepseek-ai/dsh-workflow-worker-thread": "workspace:^",
-    "@deepseek-ai/dsh-agent-instructions": "workspace:^"
+    "@deepseek-ai/dsh-agent-instructions": "workspace:^",
+    "@deepseek-ai/dsh-knowledge": "workspace:^",
+    "@deepseek-ai/dsh-knowledge-local": "workspace:^",
+    "@deepseek-ai/dsh-knowledge-extract-text": "workspace:^",
+    "@deepseek-ai/dsh-knowledge-extract-pdf": "workspace:^",
+    "@deepseek-ai/dsh-knowledge-tools": "workspace:^"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-invariants": "workspace:^",

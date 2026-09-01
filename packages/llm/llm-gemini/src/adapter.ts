@@ -11,6 +11,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import {
   attributionHeaders,
+  contentHasImage,
   LlmAdapter,
   LlmError,
   ReasoningEffortId,
@@ -23,8 +24,9 @@ import type {
   ResolvedRetryPolicy,
   StreamChunk,
 } from '@deepseek-ai/dsh-llm'
+import type { AttachmentStore, ImageRequestPolicy, RequestImageAttachment, AttachmentId } from '@deepseek-ai/dsh-attachment'
 import { ensureAccessToken, readGrant, writeGrant } from './auth.ts'
-import { agyBinary, flattenPrompt, generateViaAgy } from './agy.ts'
+import { agyBinary, generateViaAgy, prepareAgyPrompt } from './agy.ts'
 import type { AgyResult } from './agy.ts'
 import {
   codeAssistEnvelope,
@@ -32,6 +34,7 @@ import {
   resolveCodeAssistProject,
 } from './codeassist.ts'
 import { buildRequestBody, effortToBudget, GeminiStreamConverter } from './convert.ts'
+import { prepareGeminiImages } from './images.ts'
 import { GEMINI_MODELS, modelById } from './models.ts'
 
 /** The single provider route this adapter owns. */
@@ -43,10 +46,31 @@ export const PROVIDER_NAME = 'Google Gemini'
 /** Selectable reasoning efforts offered on reasoning-capable models. */
 const REASONING_EFFORTS = ['off', 'low', 'medium', 'high'] as const
 
+type GeminiResponseFrame = Parameters<GeminiStreamConverter['push']>[0]
+
+/** Decode one SSE frame and unwrap the Code Assist response envelope. */
+function decodeGeminiFrame(data: string): GeminiResponseFrame | undefined {
+  try {
+    const json = JSON.parse(data) as GeminiResponseFrame
+    return (json as { response?: unknown }).response !== undefined
+      && (json as { candidates?: unknown }).candidates === undefined
+      ? (json as { response: GeminiResponseFrame }).response
+      : json
+  } catch {
+    return undefined
+  }
+}
+
 /** Constructor options for {@link GeminiAdapter}. */
 export interface GeminiAdapterOptions {
   /** Plugin context carrying the optional `ctx.credentials` seam. */
   ctx: Context
+  /** Resolve the optional durable attachment service at request time. */
+  resolveAttachments?: () => AttachmentStore | undefined
+  /** Deterministic per-image projection limits for Gemini requests. */
+  imagePolicy: ImageRequestPolicy
+  /** Maximum accumulated base64 image payload in one Gemini request. */
+  maxRequestImageBytes: number
   /** Provider-owned request retry policy, resolved once at registration. */
   retryPolicy: ResolvedRetryPolicy
 }
@@ -120,39 +144,61 @@ export class GeminiAdapter extends LlmAdapter {
     if (def === undefined) throw new LlmError(`llm-gemini has no model "${options.model}"`, 'UNKNOWN_MODEL')
 
     const budget = effortToBudget(options.reasoningEffort, def.reasoning)
+    const containsImage = options.messages.some(message => contentHasImage(message.content))
+    if (containsImage && !def.inputModalities.includes('image')) {
+      throw new LlmError(`Gemini model "${options.model}" does not accept image input.`, 'UNSUPPORTED_CONTENT')
+    }
+    const attachments = containsImage ? this.options.resolveAttachments?.() : undefined
+    if (containsImage && attachments === undefined) {
+      throw new LlmError('Gemini image input requires the durable attachment service.', 'UNSUPPORTED_CONTENT')
+    }
+    const prepared = attachments === undefined
+      ? { options, images: new Map<AttachmentId, RequestImageAttachment>() }
+      : await prepareGeminiImages(
+        options,
+        attachments,
+        this.options.imagePolicy,
+        this.options.maxRequestImageBytes,
+      )
 
     // Primary transport: the locally installed Antigravity CLI (`agy`), which
     // owns the consumer Google-account login. When the binary is absent, fall
     // back to the OAuth Code Assist transport below.
     let agyResult: AgyResult | undefined
+    const agyPrompt = await prepareAgyPrompt(prepared.options, prepared.images)
     try {
-      agyResult = await generateViaAgy({
-        binary: agyBinary(),
-        model: options.model,
-        prompt: flattenPrompt(options),
-        signal: options.signal,
-      })
-    } catch (error: unknown) {
-      if (error instanceof LlmError) throw error
-      if ((error as NodeJS.ErrnoException | undefined)?.code !== 'ENOENT') {
-        throw new LlmError(
-          `agy failed: ${error instanceof Error ? error.message : String(error)}`,
-          'PROVIDER',
-          { cause: error },
-        )
+      try {
+        agyResult = await generateViaAgy({
+          binary: agyBinary(),
+          model: options.model,
+          prompt: agyPrompt.prompt,
+          addDirs: agyPrompt.addDirs,
+          signal: options.signal,
+        })
+      } catch (error: unknown) {
+        if (error instanceof LlmError) throw error
+        if ((error as NodeJS.ErrnoException | undefined)?.code !== 'ENOENT') {
+          throw new LlmError(
+            `agy failed: ${error instanceof Error ? error.message : String(error)}`,
+            'PROVIDER',
+            { cause: error },
+          )
+        }
+        // Missing binary: fall back to the OAuth transport only when a Google
+        // grant already exists; fresh installs get the actionable message.
+        const grant = await readGrant(this.options.ctx)
+        if (grant === undefined) {
+          throw new LlmError(
+            'O Antigravity CLI (`agy`) não está instalado nesta máquina.'
+              + ' Instale-o, rode `agy` no terminal e faça login com sua conta Google uma vez;'
+              + ' depois os modelos Gemini funcionam aqui sem nenhuma chave de API.',
+            'PROVIDER',
+            { cause: error },
+          )
+        }
       }
-      // Missing binary: fall back to the OAuth transport only when a Google
-      // grant already exists; fresh installs get the actionable message.
-      const grant = await readGrant(this.options.ctx)
-      if (grant === undefined) {
-        throw new LlmError(
-          'O Antigravity CLI (`agy`) não está instalado nesta máquina.'
-            + ' Instale-o, rode `agy` no terminal e faça login com sua conta Google uma vez;'
-            + ' depois os modelos Gemini funcionam aqui sem nenhuma chave de API.',
-          'PROVIDER',
-          { cause: error },
-        )
-      }
+    } finally {
+      await agyPrompt.dispose()
     }
     if (agyResult !== undefined) {
       const index = 0
@@ -175,11 +221,15 @@ export class GeminiAdapter extends LlmAdapter {
       return
     }
 
-    yield* this.streamCodeAssist(options, budget)
+    yield* this.streamCodeAssist(prepared.options, budget, prepared.images)
   }
 
   /** OAuth Code Assist transport: bearer token + `streamGenerateContent` SSE. */
-  private async * streamCodeAssist(options: GenerateOptions, budget: ReturnType<typeof effortToBudget>): AsyncIterable<StreamChunk> {
+  private async * streamCodeAssist(
+    options: GenerateOptions,
+    budget: ReturnType<typeof effortToBudget>,
+    images: ReadonlyMap<AttachmentId, RequestImageAttachment>,
+  ): AsyncIterable<StreamChunk> {
     const token = await ensureAccessToken(this.options.ctx, options.signal)
     // The Code Assist project id is resolved once per account and cached in
     // the stored grant, so steady-state requests skip the onboarding handshake.
@@ -195,7 +245,7 @@ export class GeminiAdapter extends LlmAdapter {
     const body = codeAssistEnvelope(
       options.model,
       project,
-      buildRequestBody(options, budget),
+      buildRequestBody(options, budget, images),
     )
     const url = codeAssistStreamUrl()
 
@@ -254,18 +304,10 @@ export class GeminiAdapter extends LlmAdapter {
           if (!line.startsWith('data:')) continue
           const data = line.slice(5).trim()
           if (data.length === 0 || data === '[DONE]') continue
-          try {
-            const json = JSON.parse(data) as Parameters<GeminiStreamConverter['push']>[0]
-            // Code Assist nests the standard GenerateContentResponse under
-            // `response` (with a `traceId` beside it); unwrap before converting.
-            const frame = (json as { response?: unknown }).response !== undefined
-              && (json as { candidates?: unknown }).candidates === undefined
-              ? (json as { response: Parameters<GeminiStreamConverter['push']>[0] }).response
-              : json
-            for (const chunk of converter.push(frame)) yield chunk
-          } catch {
-            // A non-JSON keepalive or partial frame: ignore rather than fail the stream.
-          }
+          const frame = decodeGeminiFrame(data)
+          // A non-JSON keepalive or partial frame is ignored rather than failing the stream.
+          if (frame === undefined) continue
+          for (const chunk of converter.push(frame)) yield chunk
         }
       }
       // Flush any trailing buffered line.
@@ -273,16 +315,8 @@ export class GeminiAdapter extends LlmAdapter {
       if (trailing.startsWith('data:')) {
         const data = trailing.slice(5).trim()
         if (data.length > 0 && data !== '[DONE]') {
-          try {
-            const json = JSON.parse(data) as Parameters<GeminiStreamConverter['push']>[0]
-            const frame = (json as { response?: unknown }).response !== undefined
-              && (json as { candidates?: unknown }).candidates === undefined
-              ? (json as { response: Parameters<GeminiStreamConverter['push']>[0] }).response
-              : json
-            for (const chunk of converter.push(frame)) yield chunk
-          } catch {
-            /* ignore */
-          }
+          const frame = decodeGeminiFrame(data)
+          if (frame !== undefined) for (const chunk of converter.push(frame)) yield chunk
         }
       }
       for (const chunk of converter.finish()) yield chunk

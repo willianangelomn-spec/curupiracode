@@ -181,6 +181,10 @@ export class JsonlSessionPersistence extends SessionPersistence implements Persi
     return this.coordinator.append(id, events)
   }
 
+  override delete(id: SessionId, signal?: AbortSignal): Promise<boolean> {
+    return this.coordinator.delete(id, signal)
+  }
+
   override prepare(id: SessionId, signal?: AbortSignal): Promise<SessionPreparation> {
     return this.coordinator.prepare(id, signal)
   }
@@ -234,6 +238,23 @@ export class JsonlSessionPersistence extends SessionPersistence implements Persi
       if (isENOENT(error)) return undefined
       throw error
     }
+  }
+
+  /** Remove exactly one validated per-session directory. */
+  async deleteStored(id: SessionId, signal?: AbortSignal): Promise<boolean> {
+    signal?.throwIfAborted()
+    await this.ensureRootEncoding()
+    const path = await this.findLog(id, signal)
+    if (path === undefined) return false
+    const stored = await this.readPrefix(path, id, signal)
+    signal?.throwIfAborted()
+    const expectedDir = sessionDir(this.root, stored.meta.cwd, id)
+    if (dirname(path) !== expectedDir) {
+      throw new Error(`refusing to delete session "${id}": resolved artifact is outside its session directory`)
+    }
+    await rm(expectedDir, { recursive: true, force: true })
+    signal?.throwIfAborted()
+    return true
   }
 
   /**

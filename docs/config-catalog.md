@@ -413,12 +413,14 @@ export interface ConnectionConfig {
    * that is not a bare, canonical authority fails the plugin load.
    */
   trustedHosts?: string[]
+  /** Chromium extension ids allowed to issue POST RPC calls to loopback. */
+  trustedExtensionIds?: string[]
   /** Maximum buffered JSON body for every `/api` request. Default: 300 MiB. */
   maxRequestBodyBytes?: number
 }
 ```
 
-Source: [`packages/client/connection/src/index.ts:50`](../packages/client/connection/src/index.ts)
+Source: [`packages/client/connection/src/index.ts:56`](../packages/client/connection/src/index.ts)
 
 <a id="deepseek-aidsh-client-hmr"></a>
 
@@ -906,6 +908,58 @@ export interface Config {
 
 Source: [`packages/jobs/jobs-local/src/index.ts:31`](../packages/jobs/jobs-local/src/index.ts)
 
+<a id="deepseek-aidsh-knowledge"></a>
+
+## `@deepseek-ai/dsh-knowledge`
+
+```ts config-catalog
+/**
+ * Config for the knowledge seam. `store` pins which store wins when more than
+ * one is registered; a single registered usable store auto-selects.
+ */
+export interface KnowledgeRuntimeConfig {
+  /** Explicit store id. Omitted = auto-select when exactly one is usable. */
+  readonly store?: string
+  /**
+   * Target passage size in characters. Passages are the retrieval unit: too
+   * small loses the context that makes a hit intelligible, too large returns
+   * pages where a paragraph was wanted.
+   */
+  readonly passageChars?: number
+  /**
+   * Characters each passage repeats from the previous one, so a statement
+   * spanning a boundary stays retrievable from both sides.
+   */
+  readonly passageOverlapChars?: number
+}
+```
+
+Source: [`packages/knowledge/knowledge/src/index.ts:56`](../packages/knowledge/knowledge/src/index.ts)
+
+<a id="deepseek-aidsh-knowledge-local"></a>
+
+## `@deepseek-ai/dsh-knowledge-local`
+
+Requires: `knowledge`
+
+```ts config-catalog
+/** Plugin config. */
+export interface LocalKnowledgeConfig {
+  /**
+   * Vault root. Defaults to `<harness home>/knowledge/<version>`; point it at a
+   * Markdown folder's sibling to keep a user's own vault as the origin of
+   * record while the index stays disposable.
+   */
+  readonly root?: string
+  /** Enable multilingual local neural retrieval (no hosted API). */
+  readonly semantic?: boolean
+  /** Hugging Face model id; cached under the portable vault root. */
+  readonly model?: string
+}
+```
+
+Source: [`packages/knowledge/knowledge-local/src/index.ts:27`](../packages/knowledge/knowledge-local/src/index.ts)
+
 <a id="deepseek-aidsh-llm-deepseek"></a>
 
 ## `@deepseek-ai/dsh-llm-deepseek`
@@ -988,6 +1042,33 @@ export interface DeepSeekCatalogModel {
 Depends on: [`ModelModality`](../packages/llm/llm/src/index.ts) · [`RetryPolicyConfig`](../packages/llm/llm/src/index.ts)
 
 Source: [`packages/llm/llm-deepseek/src/index.ts:106`](../packages/llm/llm-deepseek/src/index.ts)
+
+<a id="deepseek-aidsh-llm-gemini"></a>
+
+## `@deepseek-ai/dsh-llm-gemini`
+
+Requires: `llm`
+
+```ts config-catalog
+/**
+ * Plugin configuration: the Gemini adapter owns a single route and reads its
+ * sign-in from the credential seam.
+ */
+export interface Config {
+  /** Total-pixel budget for each deterministic Gemini request image. */
+  requestImagePixelBudget: number
+  /** Raw encoded-byte cap for each deterministic Gemini request image. */
+  requestImageMaxBytes: number
+  /** Maximum accumulated base64 image payload in one Gemini request. */
+  maxRequestImageBytes: number
+  /** Provider-owned model-request retry policy; omission uses normal mode with five retries. */
+  retryPolicy: RetryPolicyConfig | null
+}
+```
+
+Depends on: [`RetryPolicyConfig`](../packages/llm/llm/src/index.ts)
+
+Source: [`packages/llm/llm-gemini/src/config.ts:25`](../packages/llm/llm-gemini/src/config.ts)
 
 <a id="deepseek-aidsh-llm-pi-ai"></a>
 
@@ -3339,6 +3420,9 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-host-directory-picker-auto` — requires `webServer` · `loader` ([`packages/host/directory-picker-auto/src/index.ts`](../packages/host/directory-picker-auto/src/index.ts))
 - `@deepseek-ai/dsh-host-directory-picker-native` ([`packages/host/directory-picker-native/src/index.ts`](../packages/host/directory-picker-native/src/index.ts))
 - `@deepseek-ai/dsh-host-plugin-inventory` — requires `loader` ([`packages/host/plugin-inventory/src/index.ts`](../packages/host/plugin-inventory/src/index.ts))
+- `@deepseek-ai/dsh-knowledge-extract-pdf` — requires `knowledge` ([`packages/knowledge/knowledge-extract-pdf/src/index.ts`](../packages/knowledge/knowledge-extract-pdf/src/index.ts))
+- `@deepseek-ai/dsh-knowledge-extract-text` — requires `knowledge` ([`packages/knowledge/knowledge-extract-text/src/index.ts`](../packages/knowledge/knowledge-extract-text/src/index.ts))
+- `@deepseek-ai/dsh-knowledge-tools` — requires `knowledge` · `tools` · `systemPrompt` ([`packages/knowledge/knowledge-tools/src/index.ts`](../packages/knowledge/knowledge-tools/src/index.ts))
 - `@deepseek-ai/dsh-llm` ([`packages/llm/llm/src/index.ts`](../packages/llm/llm/src/index.ts))
 - `@deepseek-ai/dsh-lsp` ([`packages/lsp/lsp/src/index.ts`](../packages/lsp/lsp/src/index.ts))
 - `@deepseek-ai/dsh-schedule` — requires `agents` · `sessions` · `tools` · `sessionPersistence` ([`packages/schedule/schedule/src/index.ts`](../packages/schedule/schedule/src/index.ts))

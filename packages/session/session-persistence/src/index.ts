@@ -143,6 +143,19 @@ export abstract class SessionPersistence extends Service {
   abstract append(id: SessionId, events: readonly SessionEvent[]): Promise<void>
 
   /**
+   * Permanently remove one persisted session after its live owner has stopped.
+   * Implementations serialize deletion with pending writes and return whether
+   * a materialized artifact existed. This operation is intentionally distinct
+   * from workspace archival, which only hides a session from navigation.
+   * @param id - session identity to remove.
+   * @param signal - optional cancellation while queued or reading storage.
+   */
+  delete(_id: SessionId, signal?: AbortSignal): Promise<boolean> {
+    signal?.throwIfAborted()
+    return Promise.reject(new Error('this session persistence backend does not support deletion'))
+  }
+
+  /**
    * Prepare the exact unpublished Session used by resume. Implementations may
    * reuse object graphs retained by an earlier {@link inspect} after confirming
    * their durable revision is still current; disposal releases an unpublished

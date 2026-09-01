@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { ToolRunContext } from '@deepseek-ai/dsh-tools'
+import type { ParameterSchemaSpec, ToolRunContext } from '@deepseek-ai/dsh-tools'
 
 /**
  * Models sometimes emit a scalar where an array of strings is declared —
@@ -12,7 +12,7 @@ import type { ToolRunContext } from '@deepseek-ai/dsh-tools'
 const exec = { signal: new AbortController().signal } as ToolRunContext
 
 /** Echoes the arguments `execute` actually received after coercion. */
-function echoTool(parameters: Parameters<typeof defineTool>[0]['parameters']) {
+function echoTool(parameters: ParameterSchemaSpec) {
   return defineTool({
     name: 'echo',
     description: 'Returns the arguments execute received.',

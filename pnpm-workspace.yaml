@@ -42,6 +42,10 @@ allowBuilds:
   lefthook: true
   # Cross-platform boundary for the persistent PTY backend, including ConPTY on Windows.
   node-pty: true
+  # Curupira Memória runs multilingual embeddings locally through ONNX.
+  onnxruntime-node: true
+  # Pulled in for image pipelines by Transformers.js; text embeddings do not use it.
+  sharp: false
   # Pulled in by @earendil-works/pi-ai (optional LLM API backend). pnpm lists
   # them only because they ship lifecycle scripts, but those are no-ops we don't
   # need, so we deny them — install still succeeds.

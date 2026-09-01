@@ -10,7 +10,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { ChangeEvent, KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import clsx from 'clsx'
 import {
-  IconPlusOutline16, IconWarningOutline16, Toast, Tooltip,
+  IconPaperclipOutline16, IconPlusOutline16, IconWarningOutline16, Toast, Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 // Type-only: the `plan` projection key merge (the TodoDock posture — the
 // composer reads a host-computed value; the domain owns the key).
@@ -136,6 +136,7 @@ export function InputBar({
     if (notice?.level === 'error') showToast(notice.text)
   }, [notice, showToast])
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const imageInputRef = useRef<HTMLInputElement | null>(null)
   const cardRef = useRef<HTMLDivElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const mirrorRef = useRef<HTMLDivElement | null>(null)
@@ -535,6 +536,11 @@ export function InputBar({
   }, [addImages, attachments, imageLimits, showToast, t])
 
   const canAcceptDrop = !locked && !machineBusy && addImages !== undefined
+  const onPickImages = (e: ChangeEvent<HTMLInputElement>): void => {
+    const files = Array.from(e.currentTarget.files ?? [])
+    e.currentTarget.value = ''
+    intakeImages(files)
+  }
 
   const onSelect = (e: React.SyntheticEvent<HTMLTextAreaElement>): void => {
     // Any caret/selection gesture ends a live paste attempt (the machine
@@ -769,6 +775,14 @@ export function InputBar({
         </div>
         <div className={css.row}>
           <div className={css.tools}>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              multiple
+              hidden
+              onChange={onPickImages}
+            />
             <Tooltip label={t('input.commands')} side="top" delayMs={500}>
               <button
                 type="button"
@@ -781,6 +795,18 @@ export function InputBar({
                 onClick={onToggleCommandMenu}
               >
                 <IconPlusOutline16 size={14} />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('input.attachImages')} side="top" delayMs={500}>
+              <button
+                type="button"
+                className={css.add}
+                aria-label={t('input.attachImages')}
+                disabled={!canAcceptDrop}
+                onMouseDown={keepFocus}
+                onClick={() => { imageInputRef.current?.click() }}
+              >
+                <IconPaperclipOutline16 size={14} />
               </button>
             </Tooltip>
             <div className={css.modes}>

@@ -117,6 +117,15 @@ export interface KnowledgeDocument {
   readonly ingestedAt: number
 }
 
+/** One semantically related document in the user's local vault. */
+export interface KnowledgeRelation {
+  readonly documentId: string
+  readonly documentName: string
+  readonly origin?: string
+  /** Cosine similarity between normalized local document embeddings. */
+  readonly score: number
+}
+
 /**
  * Turns one document's bytes into plain text. Extractors are plugins so a new
  * format never edits the core; each declares the formats it handles and may
@@ -208,6 +217,11 @@ export interface KnowledgeStore {
    */
   search(request: KnowledgeSearchRequest, signal?: AbortSignal): Promise<readonly KnowledgePassage[]>
   /**
+   * Find documents whose meaning is closest to one stored document. Stores
+   * without a semantic index may omit this capability.
+   */
+  related?(id: string, maxResults?: number, signal?: AbortSignal): Promise<readonly KnowledgeRelation[]>
+  /**
    * List every document currently held.
    * @param signal - cancellation for a long read.
    * @returns The stored documents.
@@ -263,8 +277,4 @@ export type KnowledgeErrorCode =
  * narrowed to {@link KnowledgeErrorCode} so callers route on a closed set
  * rather than parsing messages.
  */
-export class KnowledgeError extends HarnessError {
-  constructor(message: string, code: KnowledgeErrorCode, options?: ErrorOptions) {
-    super(message, code, options)
-  }
-}
+export class KnowledgeError extends HarnessError {}

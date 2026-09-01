@@ -4,7 +4,9 @@
 
 # CurupiraCode
 
-[Português](README.md) | [English](README.en.md) | 中文
+[English](README.md) | 中文
+
+巴西葡萄牙语文档见 [README.pt-BR.md](README.pt-BR.md)。
 
 **开放的 AI，代码由你掌控。**
 
