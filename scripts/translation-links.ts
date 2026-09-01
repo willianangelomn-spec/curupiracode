@@ -60,12 +60,12 @@ interface Replacement {
 
 type LinkNode = Extract<Nodes, { type: 'link' | 'definition' }>
 
-/** Offset of the one top-level switcher link immediately following the H1. */
-export function languageSwitcherLinkOffset(
+/** Canonical top-level switcher links immediately following the H1. */
+function languageSwitcherLinks(
   tree: Nodes,
   markdown: string,
   acceptedTargets: string | readonly string[],
-): number | undefined {
+): LinkNode[] | undefined {
   if (tree.type !== 'root') return undefined
   const accepted = new Set(typeof acceptedTargets === 'string' ? [acceptedTargets] : acceptedTargets)
   const headingIndex = tree.children.findIndex(node => node.type === 'heading' && node.depth === 1)
@@ -77,13 +77,44 @@ export function languageSwitcherLinkOffset(
     const end = node.position.end.offset
     if (start === undefined || end === undefined) continue
     const authored = markdown.slice(start, end)
-    if (!/^(?:English \| \[中文\]\([^\n]+\)|\[English\]\([^\n]+\) \| 中文)$/.test(authored)) continue
     const links = node.children.filter((child): child is Extract<Nodes, { type: 'link' }> => child.type === 'link')
-    if (links.length === 1 && accepted.has(links[0]?.url ?? '')) {
-      return links[0]?.position?.start.offset
+    const counterpartLinks = links.filter(link => accepted.has(link.url))
+    const bilingual = /^(?:English \| \[中文\]\([^\n]+\)|\[English\]\([^\n]+\) \| 中文)$/.test(authored)
+    if (bilingual && links.length === 1 && counterpartLinks.length === 1) return links
+    const trilingualSource = /^Português do Brasil \| \[English\]\([^\n]+\) \| \[中文\]\([^\n]+\)$/.test(authored)
+    const trilingualChinese = /^\[Português do Brasil\]\([^\n]+\) \| \[English\]\([^\n]+\) \| 中文$/.test(authored)
+    const trilingual = trilingualSource || trilingualChinese
+    if (trilingual && links.length === 2 && counterpartLinks.length === 1) {
+      const extra = links.find(link => !accepted.has(link.url))
+      if (extra !== undefined && /\.en\.md(?:[?#].*)?$/.test(extra.url)) return links
     }
   }
   return undefined
+}
+
+/** Offset of the paired-language link in the canonical top-level switcher. */
+export function languageSwitcherLinkOffset(
+  tree: Nodes,
+  markdown: string,
+  acceptedTargets: string | readonly string[],
+): number | undefined {
+  const accepted = new Set(typeof acceptedTargets === 'string' ? [acceptedTargets] : acceptedTargets)
+  return languageSwitcherLinks(tree, markdown, acceptedTargets)
+    ?.find(link => accepted.has(link.url))?.position?.start.offset
+}
+
+/** Offsets of every link in the canonical top-level switcher. */
+export function languageSwitcherLinkOffsets(
+  tree: Nodes,
+  markdown: string,
+  acceptedTargets: string | readonly string[],
+): ReadonlySet<number> {
+  const offsets = new Set<number>()
+  for (const link of languageSwitcherLinks(tree, markdown, acceptedTargets) ?? []) {
+    const offset = link.position?.start.offset
+    if (offset !== undefined) offsets.add(offset)
+  }
+  return offsets
 }
 
 /** Whether the tree carries its canonical top-level language switcher. */
@@ -231,14 +262,14 @@ function visitDocumentLinkNodes(
   visitor: (node: LinkNode) => void,
 ): void {
   const tree = parseMarkdown(markdown)
-  const switcherOffset = languageSwitcherLinkOffset(tree, markdown, skipTargets)
+  const switcherOffsets = languageSwitcherLinkOffsets(tree, markdown, skipTargets)
   const referencedIdentifiers = new Set<string>()
   const visitedDefinitions = new Set<string>()
   visitMarkdown(tree, (node) => {
     if (node.type === 'linkReference') referencedIdentifiers.add(node.identifier)
   })
   visitMarkdown(tree, (node) => {
-    if (node.type === 'link' && node.position?.start.offset === switcherOffset) return
+    if (node.type === 'link' && switcherOffsets.has(node.position?.start.offset ?? -1)) return
     if (node.type === 'link') {
       visitor(node)
     } else if (node.type === 'definition'

@@ -4,9 +4,7 @@
 
 # CurupiraCode
 
-[English](README.md) | 中文
-
-巴西葡萄牙语文档见 [README.pt-BR.md](README.pt-BR.md)。
+[Português do Brasil](README.md) | [English](README.en.md) | 中文
 
 **开放的 AI，代码由你掌控。**
 
@@ -58,10 +56,16 @@ pnpm curupiracode web --no-open
 - 通过消费级 Google 登录使用 Google Gemini —— 适配器与本地已登录的 Antigravity CLI（`agy`）通信，无需管理任何 API key；Google 账号 OAuth 传输（Code Assist）作为企业部署的回退。
 - 通过通用提供方接入任意 OpenAI 兼容端点，支持按模型的推理力度、重试策略与模型选择器。
 
+**Curupira Memória（第二大脑）**
+
+- 本地知识包：摄取文档、切分段落，并以完整来源信息（文档、片段和偏移）进行搜索。
+- 完全保存在本机的 SQLite 存储与内容寻址知识库；重复摄取成本低且不会产生副本。
+- 提取 **PDF**、**DOCX**、**HTML** 和纯文本，并可直接读取 Obsidian 知识库。
+- 安装后即可使用的 agent 工具，用于摄取文件夹并搜索用户笔记。
+
 **网络与知识**
 
 - 无需额外密钥的内置搜索：DuckDuckGo（Bing 回退）与 Google 新闻；可选由运维者自控的 SearXNG 实例。
-- 知识包：PDF 与文本提取并写入本地段落存储 —— 为本地第二大脑 Curupira Memória 打基础。
 
 **网页界面（客户端）**
 

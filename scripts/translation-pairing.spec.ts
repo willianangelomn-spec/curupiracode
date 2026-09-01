@@ -248,6 +248,11 @@ describe('translation pairing switchers', () => {
       rmSync(root, { recursive: true, force: true })
     }
   })
+
+  it('excludes every link in the CurupiraCode trilingual header switcher', () => {
+    const markdown = '# CurupiraCode\n\nPortuguês do Brasil | [English](counterpart.en.md) | [中文](counterpart.zh.md)\n'
+    expect(signature(markdown).links).toEqual([])
+  })
 })
 
 describe('translation pairing records', () => {

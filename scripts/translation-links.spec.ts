@@ -24,6 +24,7 @@ function fixture(): string {
   mkdirSync(join(root, 'docs/section'), { recursive: true })
   mkdirSync(join(root, 'packages'), { recursive: true })
   writeFileSync(join(root, 'docs/guide.md'), '# Guide\n')
+  writeFileSync(join(root, 'docs/guide.en.md'), '# Guide in English\n')
   writeFileSync(join(root, 'docs/guide.zh.md'), '# 指南\n')
   writeFileSync(join(root, 'docs/reference.md'), '# Overview\n')
   writeFileSync(join(root, 'docs/reference.zh.md'), '# 概览\n')
@@ -139,6 +140,20 @@ describe('translation link locale validation', () => {
       '# 指南\n\n[English](guide.md) | 中文\n',
       linkContext(root, 'docs/guide.zh.md'),
       ['guide.md'],
+    )).toEqual([])
+  })
+
+  it('exempts every link in the CurupiraCode Portuguese-English-Chinese switcher', () => {
+    const root = fixture()
+    expect(translationLinkLocaleViolations(
+      '# 指南\n\n[Português do Brasil](guide.md) | [English](guide.en.md) | 中文\n',
+      linkContext(root, 'docs/guide.zh.md'),
+      ['guide.md'],
+    )).toEqual([])
+    expect(translationLinkLocaleViolations(
+      '# Guia\n\nPortuguês do Brasil | [English](guide.en.md) | [中文](guide.zh.md)\n',
+      linkContext(root, 'docs/guide.md'),
+      ['guide.zh.md'],
     )).toEqual([])
   })
 

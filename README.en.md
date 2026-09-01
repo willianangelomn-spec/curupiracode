@@ -4,7 +4,7 @@
 
 # CurupiraCode
 
-[Português](README.md) | English | [中文](README.zh.md)
+[Português do Brasil](README.md) | English | [中文](README.zh.md)
 
 **Open AI, code under your control.**
 
@@ -56,10 +56,16 @@ pnpm curupiracode web --no-open
 - Google Gemini through a consumer Google login — the adapter talks to the locally installed, already-authenticated Antigravity CLI (`agy`), so there is no API key to manage; a Google-account OAuth transport (Code Assist) remains as fallback for enterprise deployments.
 - Any OpenAI-compatible endpoint through the generic provider, with per-model reasoning effort, retry policies, and a model picker.
 
+**Curupira Memória (second brain)**
+
+- Local knowledge package with document ingestion, passage chunking, and search carrying complete provenance: document, excerpt, and offset.
+- On-device SQLite store with a content-addressed vault, so re-ingestion is cheap and never duplicates data.
+- **PDF**, **DOCX**, **HTML**, and plain-text extraction, designed to read an Obsidian vault directly.
+- Ready-to-use agent tools for ingesting folders and searching user notes after installation.
+
 **Web & knowledge**
 
 - Built-in search with no extra key: DuckDuckGo with Bing fallback and Google News; optional SearXNG through an operator-controlled instance.
-- Knowledge packages: PDF and text extraction feeding a local passage store — the groundwork for Curupira Memória, the local second brain.
 
 **Web interface (client)**
 
