@@ -5,8 +5,8 @@ import {
   type PointerEvent,
 } from 'react'
 import { Tooltip } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { TrajectoryTurnModel } from './layout.ts'
+import type { TrajectoryTranslate } from './locales.ts'
 import type { AssistantMetricDetail, TrajectoryCellKind, TrajectoryCellProps } from './trajectory-record.ts'
 import {
   deriveTrajectoryTimeline,
@@ -14,7 +14,6 @@ import {
   type TrajectoryTimelineMode,
   type TrajectoryTimeRange,
 } from './timeline.ts'
-import type { NS, TrajectoryKey } from './locales.ts'
 import css from './TrajectoryTimeline.module.css'
 
 const MINIMUM_DRAG_PX = 3
@@ -23,23 +22,6 @@ const EDGE_PAN_ZONE_FRACTION = 0.08
 const EDGE_PAN_STEP_FRACTION = 0.025
 const MAXIMUM_EDGE_PAN_PX = 32
 const TIMELINE_TOOLTIP_DELAY_MS = 500
-
-/** Namespace-bound translate seat threaded through the timeline's subcomponents. */
-type Translate = TranslateNS<typeof NS>
-
-const KIND_LABEL_KEY: Record<TrajectoryCellKind, TrajectoryKey> = {
-  system: 'kind.system',
-  user: 'kind.user',
-  context: 'kind.context',
-  compacted: 'kind.compacted',
-  message: 'kind.message',
-  tool: 'kind.tool',
-  subtool: 'kind.subtool',
-}
-
-function kindLabel(t: Translate, kind: TrajectoryCellKind): string {
-  return t(KIND_LABEL_KEY[kind])
-}
 
 interface TimelineRecordDetail {
   decodingMs?: number
@@ -100,6 +82,18 @@ function timelineRecordDetail(cell: TrajectoryCellProps): TimelineRecordDetail {
   }
 }
 
+function timelineKindLabel(kind: TrajectoryCellKind, t: TrajectoryTranslate): string {
+  switch (kind) {
+    case 'system': return t('kind.system')
+    case 'user': return t('kind.user')
+    case 'context': return t('kind.context')
+    case 'compacted': return t('kind.compacted')
+    case 'message': return t('kind.assistant')
+    case 'tool': return t('kind.tool')
+    case 'subtool': return t('kind.subtool')
+  }
+}
+
 function formatRecordedTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString(undefined, {
     hour: '2-digit',
@@ -112,25 +106,25 @@ function formatRecordedTime(timestamp: number): string {
 function timelineTooltipLabel(
   kind: TrajectoryCellKind,
   detail: TimelineRecordDetail | undefined,
-  t: Translate,
+  t: TrajectoryTranslate,
 ): string {
-  const heading = kindLabel(t, kind)
+  const heading = timelineKindLabel(kind, t)
   if (detail === undefined) return heading
   const duration = detail.durationMs === undefined
     ? null
-    : t('timeline.total', { offset: formatTimelineOffset(detail.durationMs) })
+    : t('timeline.total', { duration: formatTimelineOffset(detail.durationMs, t) })
   const range = detail.startedAt === undefined
     ? null
     : detail.durationMs === undefined
-      ? t('timeline.startedAt', { time: formatRecordedTime(detail.startedAt) })
+      ? t('timeline.started', { time: formatRecordedTime(detail.startedAt) })
       : `${formatRecordedTime(detail.startedAt)} → ${formatRecordedTime(
         detail.startedAt + detail.durationMs,
       )}`
   const segments = detail.ttftMs === undefined || detail.decodingMs === undefined
     ? null
     : t('timeline.ttftDecoding', {
-      ttft: formatTimelineOffset(detail.ttftMs),
-      decoding: formatTimelineOffset(detail.decodingMs),
+      ttft: formatTimelineOffset(detail.ttftMs, t),
+      decoding: formatTimelineOffset(detail.decodingMs, t),
     })
   const timing = [duration, segments].filter(value => value !== null).join(' · ')
   return [heading, range, timing].filter(value => value !== null && value !== '').join('\n')
@@ -138,6 +132,7 @@ function timelineTooltipLabel(
 
 /** Props for the fixed full-domain overview above the trajectory ledger. */
 export interface TrajectoryTimelineProps {
+  t: TrajectoryTranslate
   turns: readonly TrajectoryTurnModel[]
   mode: TrajectoryTimelineMode
   range: TrajectoryTimeRange | null
@@ -153,8 +148,6 @@ export interface TrajectoryTimelineProps {
   onRecordSelect?: (index: number) => void
   /** Bring the nearest record into view after clicking timeline whitespace. */
   onRecordFocus?: (index: number) => void
-  /** Translate a trajectory dictionary key. */
-  t: TranslateNS<typeof NS>
 }
 
 function orderedRange(left: number, right: number): FractionRange {
@@ -196,12 +189,12 @@ function rangeFraction(
   }
 }
 
-function LaneLabels({ t }: { t: Translate }) {
+function LaneLabels({ t }: { t: TrajectoryTranslate }) {
   return (
     <div className={css.labels} aria-hidden="true">
-      <span>{t('timeline.laneInput')}</span>
-      <span>{t('timeline.laneModel')}</span>
-      <span>{t('timeline.laneTools')}</span>
+      <span>{t('column.input')}</span>
+      <span>{t('column.model')}</span>
+      <span>{t('column.tools')}</span>
     </div>
   )
 }
@@ -215,11 +208,11 @@ function EarlierHistoryBoundary({
   loading: boolean
   onHover: () => void
   onLoad: (() => void) | undefined
-  t: Translate
+  t: TrajectoryTranslate
 }) {
   return (
     <Tooltip
-      label={loading ? t('history.loadingEarlierEllipsis') : t('timeline.clickLoadEarlier')}
+      label={loading ? t('history.loadingEarlier') : t('history.clickToLoadEarlier')}
       side="right"
       delayMs={TIMELINE_TOOLTIP_DELAY_MS}
     >
@@ -228,7 +221,7 @@ function EarlierHistoryBoundary({
         className={css.earlierHistory}
         data-earlier-history
         data-loading={loading || undefined}
-        aria-label={loading ? t('history.loadingEarlier') : t('history.loadEarlier')}
+        aria-label={loading ? t('history.loadingEarlierAria') : t('history.loadEarlier')}
         aria-disabled={loading || onLoad === undefined}
         onClick={onLoad}
         onPointerEnter={(event) => {
@@ -246,6 +239,7 @@ function EarlierHistoryBoundary({
 
 /** Overview renderer with drag ranges, click-sized focus, and Escape reset. */
 export const TrajectoryTimeline = memo(function TrajectoryTimeline({
+  t,
   turns,
   mode,
   range,
@@ -256,7 +250,6 @@ export const TrajectoryTimeline = memo(function TrajectoryTimeline({
   onRangeChange,
   onRecordSelect,
   onRecordFocus,
-  t,
 }: TrajectoryTimelineProps) {
   const model = useMemo(() => deriveTrajectoryTimeline(turns, mode), [mode, turns])
   const detailByIndex = useMemo(
@@ -394,11 +387,11 @@ export const TrajectoryTimeline = memo(function TrajectoryTimeline({
 
   if (model === null) {
     return (
-      <section ref={rootRef} className={css.root} aria-label={t('a11y.timelineRoot')}>
+      <section ref={rootRef} className={css.root} aria-label={t('timeline.aria')}>
         <div className={css.plot}>
           <LaneLabels t={t} />
           <div className={css.track}>
-            <span className={css.empty}>{t('timeline.empty')}</span>
+            <span className={css.empty}>{t('timeline.noTimingData')}</span>
             {hasEarlierRecords && (
               <EarlierHistoryBoundary
                 loading={loadingEarlier}
@@ -590,14 +583,14 @@ export const TrajectoryTimeline = memo(function TrajectoryTimeline({
   }
 
   return (
-    <section ref={rootRef} className={css.root} aria-label={t('a11y.timelineRoot')}>
+    <section ref={rootRef} className={css.root} aria-label={t('timeline.aria')}>
       <div className={css.plot}>
         <LaneLabels t={t} />
         <div
           ref={trackRef}
           className={css.track}
           data-panning={panning || undefined}
-          aria-label={t('a11y.timelineOverview')}
+          aria-label={t('timeline.overviewAria')}
           tabIndex={0}
           onKeyDown={onKeyDown}
           onPointerDown={onPointerDown}

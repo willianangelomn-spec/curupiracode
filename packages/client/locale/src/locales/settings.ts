@@ -8,11 +8,6 @@ export const zh = {
 /** The settings.locale namespace key union. */
 export type SettingsLocaleKey = keyof typeof zh
 
-/** Brazilian Portuguese dictionary, checked complete against the zh key set. */
-export const ptBR = {
-  'language.title': 'Idioma',
-} satisfies Record<SettingsLocaleKey, string>
-
 /** English dictionary, checked complete against the zh key set. */
 export const en = {
   'language.title': 'Language',

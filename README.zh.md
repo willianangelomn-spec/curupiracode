@@ -98,6 +98,18 @@ pnpm curupiracode web --no-open
 
 请阅读 [CONTRIBUTING.md](CONTRIBUTING.zh.md)、[AGENTS.md](AGENTS.md) 和[架构文档](docs/architecture.zh.md)。新集成应以插件形式实现，只申请必要权限，并让用户掌控所有外部操作。
 
+## 引用
+
+```bibtex
+@misc{deepseek-harness2026,
+  title={DeepSeek Harness: Everything is a Plugin},
+  author={DeepSeek-AI},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
+}
+```
+
 ## 许可证
 
 [MIT](LICENSE)。第三方依赖及其许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
