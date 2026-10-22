@@ -42,7 +42,7 @@ pnpm curupiracode web
 pnpm curupiracode web --no-open
 ```
 
-要使用 Google Gemini，请安装 Antigravity CLI（Gemini 4 Argon 需要 `agy` 1.4.3 或更高版本），并在终端运行一次 `agy`，用 Google 账号登录。[适配器 README](packages/llm/llm-gemini/README.zh.md) 介绍了模型和设置。
+要使用 Google Gemini，请安装 Antigravity CLI（Gemini 4 Argon 需要 `agy` 1.4.3 或更高版本），并在 **设置 → 模型 → Google Gemini → 使用 Google 登录** 中或在终端运行一次 `agy`，用 Google 账号登录。[适配器 README](packages/llm/llm-gemini/README.zh.md) 介绍了模型和设置。
 
 ## 系统包含什么
 

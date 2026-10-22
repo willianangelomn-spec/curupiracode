@@ -42,7 +42,7 @@ O comando imprime um endereço como `http://127.0.0.1:3080/?token=…` e o abre 
 pnpm curupiracode web --no-open
 ```
 
-Para usar o Google Gemini, instale o Antigravity CLI (`agy` 1.4.3 ou mais recente para o Gemini 4 Argon) e rode `agy` uma vez no terminal para entrar com sua conta Google. O [README do adaptador](packages/llm/llm-gemini/README.md) descreve os modelos e as configurações.
+Para usar o Google Gemini, instale o Antigravity CLI (`agy` 1.4.3 ou mais recente para o Gemini 4 Argon) e entre com sua conta Google em **Configurações → Modelos → Google Gemini → Entrar com Google**, ou rodando `agy` uma vez no terminal. O [README do adaptador](packages/llm/llm-gemini/README.md) descreve os modelos e as configurações.
 
 <a id="o-que-tem-dentro"></a>
 

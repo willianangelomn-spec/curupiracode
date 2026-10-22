@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-gemini-sign-in/README.md
+/:
+  en: f76d1d394640e69c
+  zh: 09b4870a8fe986f3
+/deepseek-ai-dsh-client-ui-gemini-sign-in:
+  en: 71af838cfec25d24
+  zh: c33682cb2fbcd040
+/deepseek-ai-dsh-client-ui-gemini-sign-in/summary:
+  en: 37abb9d07c844568
+  zh: f05fd44eb52a23fa
+/deepseek-ai-dsh-client-ui-gemini-sign-in/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 1ef82f8fbca7499c
+/deepseek-ai-dsh-client-ui-gemini-sign-in/use-this-package:
+  en: 158122929681e96f
+  zh: 591fe17592e24c4d
+/deepseek-ai-dsh-client-ui-gemini-sign-in/understand-the-implementation:
+  en: 64545f55d6c5ef91
+  zh: be51d468063ae9b5
+/deepseek-ai-dsh-client-ui-gemini-sign-in/further-exploration:
+  en: 7f8bc69c4cc716a6
+  zh: 08267d7e961c1195
+/deepseek-ai-dsh-client-ui-gemini-sign-in/model-experience:
+  en: 306fe3cedcb360d6
+  zh: 132312c846d54765
+/deepseek-ai-dsh-client-ui-gemini-sign-in/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: 696d26adaf4eda6d
+/deepseek-ai-dsh-client-ui-gemini-sign-in/known-limitations-and-deferred-work:
+  en: c16a1746c9da24dd
+  zh: 9e2f9380fab9f74c
+/deepseek-ai-dsh-client-ui-gemini-sign-in/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 34c2d1b405f2ac98

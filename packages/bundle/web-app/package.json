@@ -81,6 +81,7 @@
     "@deepseek-ai/dsh-client-ui-approval": "workspace:*",
     "@deepseek-ai/dsh-client-ui-attachment": "workspace:*",
     "@deepseek-ai/dsh-client-ui-brand-curupira": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-gemini-sign-in": "workspace:*",
     "@deepseek-ai/dsh-client-ui-language-pt-br": "workspace:*",
     "@deepseek-ai/dsh-client-ui-chat": "workspace:*",
     "@deepseek-ai/dsh-client-ui-commands": "workspace:*",

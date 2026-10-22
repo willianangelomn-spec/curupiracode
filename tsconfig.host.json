@@ -430,6 +430,7 @@
     { "path": "./packages/llm/llm-deepseek-account" },
     { "path": "./packages/llm/llm-pi-ai" },
     { "path": "./packages/llm/llm-gemini" },
+    { "path": "./packages/client/ui-gemini-sign-in/tsconfig.host.json" },
     { "path": "./packages/shell/bash-local" },
     { "path": "./packages/shell/shell-env" },
     { "path": "./packages/shell/pwsh-local" },

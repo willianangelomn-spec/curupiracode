@@ -27,7 +27,7 @@ kind: "package-reference"
 
 基础组合包会挂载该适配器，因此 CurupiraCode 安装只需要 CLI：
 
-1. 安装 Antigravity CLI，并在终端运行一次 `agy`，用 Google 账号登录。
+1. 安装 Antigravity CLI，然后在 **设置 → 模型** 的 Google Gemini 卡片中（[ui-gemini-sign-in](../../client/ui-gemini-sign-in/README.zh.md)）或在终端运行一次 `agy`，用 Google 账号登录。
 2. 在模型选择器中选择 **Google Gemini** 提供方的模型。**设置 → 模型**会列出该提供方，且不显示密钥字段。
 
 ```yaml
@@ -102,7 +102,7 @@ Gemini 决定文本和图片的 token 化。保留图片消耗视觉 token；句
 <a id="known-limitations-and-deferred-work"></a>
 
 - **agy 传输只返回文本**——CLI 运行自己的智能体并返回一段最终文本，因此由 `agy` 服务的 Gemini 会话不提供 harness 工具（文件、shell、网络）；Code Assist 回退可以携带函数调用。
-- **登录在终端中完成**——注册在授权接缝上的 Google 登录流程在 Web 客户端中还没有入口；运行 `agy` 登录。
+- **Code Assist 登录没有 Web 入口**——为回退传输注册在授权接缝上的 Google OAuth 流程不在 Web 客户端中提供；模型页改为让 agy 登录。
 - **目录为手写**——id 遵循编写时的 `agy models`；更新的 id 通过 `models` 加入。
 - **图片只作为输入**——原生图片生成需要独立的 Gemini 图片模型和传输。
 

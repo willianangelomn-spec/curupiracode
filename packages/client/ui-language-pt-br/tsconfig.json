@@ -57,6 +57,9 @@
       "path": "../ui-message-feedback"
     },
     {
+      "path": "../ui-gemini-sign-in/tsconfig.client.json"
+    },
+    {
       "path": "../ui-model-selection"
     },
     {

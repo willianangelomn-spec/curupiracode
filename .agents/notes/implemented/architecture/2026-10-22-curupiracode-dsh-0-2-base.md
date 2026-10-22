@@ -22,7 +22,7 @@ The fork tracks upstream as one squash of the upstream tag `dsh-v0.2.1-rc.2` ove
 
 - Permanent session deletion, decided in the [semantic memory note](../feature/2026-08-30-curupira-semantic-memory-and-session-deletion.md), is withdrawn. It was an edit to the session controller, and the 0.2 controller is a Typert Remote whose session lifecycle and Remote access rules belong upstream. Archive is the only removal action.
 - The `trustedExtensionIds` CORS bridge of the [browser extension note](../feature/2026-08-31-curupiracode-browser-extension.md) is withdrawn. The 0.2 connection admits `/api` only for same-origin requests with the browser cookie or a Peer credential, so the extension's requests receive HTTP 403. Its replacement is a Host bridge with visible token pairing, tracked in the roadmap's browser milestone.
-- The Gemini sign-in card on the Models page is withdrawn because the 0.2 page has no surface for adapter-owned authorization flows. Users sign in by running `agy` in a terminal; the Google OAuth flow stays registered on the authorization seam for the Code Assist fallback.
+- The Gemini sign-in card that ran the adapter's own Google OAuth flow is withdrawn because the 0.2 Models page has no surface for authorization-seam flows. `@deepseek-ai/dsh-client-ui-gemini-sign-in` replaces it: it fills the keyed `settings.models.provider-card` slot of the `llm-gemini` row and signs in agy itself through agy's `AGY_CLI_CDE_AUTH_ACTION` check and login actions, so the transport that serves Gemini owns the sign-in. The Google OAuth flow stays registered on the authorization seam for the Code Assist fallback.
 
 ## Alternatives considered
 
@@ -34,4 +34,4 @@ The fork tracks upstream as one squash of the upstream tag `dsh-v0.2.1-rc.2` ove
 
 ## Consequences
 
-Upstream syncs now touch CurupiraCode at bundle rows, preset files, and package conventions instead of inside upstream components. The pt-BR pack must be updated whenever upstream changes a translated namespace, and the typecheck reports exactly which keys moved. Users lose permanent session deletion and the extension's server connection until the paired bridge exists; the root README and the extension README state that gap. Gemini users sign in outside the Web interface.
+Upstream syncs now touch CurupiraCode at bundle rows, preset files, and package conventions instead of inside upstream components. The pt-BR pack must be updated whenever upstream changes a translated namespace, and the typecheck reports exactly which keys moved. Users lose permanent session deletion and the extension's server connection until the paired bridge exists; the root README and the extension README state that gap. Gemini users sign in from the Gemini card, and the card depends on agy's authentication actions as agy 1.4.5 implements them.

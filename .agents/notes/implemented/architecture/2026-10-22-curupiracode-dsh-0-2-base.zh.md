@@ -22,7 +22,7 @@ CurupiraCode 过去把大量产品行为直接改写在上游包内：Web 外壳
 
 - [语义记忆说明](../feature/2026-08-30-curupira-semantic-memory-and-session-deletion.zh.md)中决定的永久删除会话功能已撤回。它是对会话控制器的修改，而 0.2 的控制器是 Typert Remote，其会话生命周期和 Remote 访问规则归上游所有。归档是唯一的移除操作。
 - [浏览器扩展说明](../feature/2026-08-31-curupiracode-browser-extension.zh.md)中的 `trustedExtensionIds` CORS 桥接已撤回。0.2 的连接只接受携带浏览器 cookie 或 Peer 凭据的同源 `/api` 请求，因此扩展的请求会收到 HTTP 403。替代方案是带可见令牌配对的宿主桥接，记录在路线图的浏览器里程碑中。
-- 模型页上的 Gemini 登录卡片已撤回，因为 0.2 的页面没有承载适配器自有授权流程的界面。用户在终端运行 `agy` 登录；Google OAuth 流程仍注册在授权接缝上，供 Code Assist 回退使用。
+- 运行适配器自有 Google OAuth 流程的 Gemini 登录卡片已撤回，因为 0.2 的模型页没有承载授权接缝流程的界面。`@deepseek-ai/dsh-client-ui-gemini-sign-in` 取而代之：它填充 `llm-gemini` 行的带键 `settings.models.provider-card` 插槽，并通过 agy 的 `AGY_CLI_CDE_AUTH_ACTION` check 与 login 操作让 agy 自己登录，因此提供 Gemini 的传输拥有该登录。Google OAuth 流程仍注册在授权接缝上，供 Code Assist 回退使用。
 
 ## 考虑过的替代方案
 
@@ -34,4 +34,4 @@ CurupiraCode 过去把大量产品行为直接改写在上游包内：Web 外壳
 
 ## 影响
 
-上游同步现在只在组合包行、预设文件和包约定处触及 CurupiraCode，而不是在上游组件内部。每当上游修改已翻译的命名空间时，pt-BR 语言包都必须更新，类型检查会准确报告哪些键发生了变化。在配对桥接完成之前，用户失去永久删除会话功能和扩展的服务器连接；根 README 和扩展 README 说明了这一缺口。Gemini 用户需要在 Web 界面之外登录。
+上游同步现在只在组合包行、预设文件和包约定处触及 CurupiraCode，而不是在上游组件内部。每当上游修改已翻译的命名空间时，pt-BR 语言包都必须更新，类型检查会准确报告哪些键发生了变化。在配对桥接完成之前，用户失去永久删除会话功能和扩展的服务器连接；根 README 和扩展 README 说明了这一缺口。Gemini 用户在 Gemini 卡片中登录，该卡片依赖 agy 1.4.5 实现的认证操作。

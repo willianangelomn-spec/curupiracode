@@ -27,7 +27,7 @@ This adapter serves Google **Gemini** through a **Google account sign-in** inste
 
 The base bundle mounts the adapter, so a CurupiraCode installation only needs the CLI:
 
-1. Install the Antigravity CLI and run `agy` once in a terminal to sign in with your Google account.
+1. Install the Antigravity CLI, then sign in with your Google account from the Google Gemini card on **Settings → Models** ([ui-gemini-sign-in](../../client/ui-gemini-sign-in/README.md)) or by running `agy` once in a terminal.
 2. Pick a model of the **Google Gemini** provider in the model selector. **Settings → Models** lists the provider without a key field.
 
 ```yaml
@@ -102,7 +102,7 @@ An unchanged request prefix and deterministic image projection stay eligible for
 <a id="known-limitations-and-deferred-work"></a>
 
 - **The agy transport answers in text only** — the CLI runs its own agent and returns one final text, so harness tools (files, shell, web) are not offered to a Gemini session served by `agy`; the Code Assist fallback carries function calls.
-- **Sign-in happens in the terminal** — the Google sign-in flow registered on the authorization seam has no surface in the Web client yet; run `agy` to sign in.
+- **The Code Assist sign-in has no Web surface** — the Google OAuth flow registered on the authorization seam for the fallback transport is not offered in the Web client; the Models page signs in agy instead.
 - **The catalog is written by hand** — ids follow `agy models` at the time of writing; add newer ids through `models`.
 - **Images are input only** — native image generation needs a separate Gemini image model and transport.
 

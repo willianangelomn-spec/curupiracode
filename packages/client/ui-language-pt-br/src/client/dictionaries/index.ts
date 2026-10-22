@@ -11,6 +11,7 @@ import { cordisPtBr } from './ui-cordis.ts'
 import { deepseekModelLabel1017PtBr } from './ui-deepseek-model-label-1017.ts'
 import { deliverablesPtBr } from './ui-deliverables.ts'
 import { directoryBrowserPtBr } from './ui-directory-picker-browse.ts'
+import { geminiSignInPtBr } from './ui-gemini-sign-in.ts'
 import { goalPtBr } from './ui-goal.ts'
 import { slashMenuPtBr } from './ui-input-trigger.ts'
 import { jobPtBr } from './ui-jobs.ts'
@@ -67,6 +68,7 @@ export const PT_BR_DICTIONARIES: Readonly<Record<string, Readonly<Record<string,
   'job': jobPtBr,
   'shortcuts.layout': shortcutsLayoutPtBr,
   'feedback': feedbackPtBr,
+  'geminiSignIn': geminiSignInPtBr,
   'model': modelPtBr,
   'open-in-app': openInAppPtBr,
   'permission.access': permissionAccessPtBr,

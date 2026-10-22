@@ -53,6 +53,7 @@
     "@deepseek-ai/dsh-client-ui-cordis": "workspace:*",
     "@deepseek-ai/dsh-client-ui-deepseek-model-label-1017": "workspace:*",
     "@deepseek-ai/dsh-client-ui-deliverables": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-gemini-sign-in": "workspace:*",
     "@deepseek-ai/dsh-client-ui-directory-picker-browse": "workspace:*",
     "@deepseek-ai/dsh-client-ui-goal": "workspace:*",
     "@deepseek-ai/dsh-client-ui-input-trigger": "workspace:*",

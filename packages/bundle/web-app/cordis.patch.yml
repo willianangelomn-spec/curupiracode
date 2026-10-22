@@ -317,6 +317,11 @@
     - id: ui-settings-models
       name: '@deepseek-ai/dsh-client-ui-settings-models'
 
+    # Google sign-in for the Antigravity CLI inside the Gemini provider card:
+    # the Host half drives agy's own sign-in, the browser half fills the card.
+    - id: ui-gemini-sign-in
+      name: '@deepseek-ai/dsh-client-ui-gemini-sign-in'
+
     # Plugin management: the sidebar Plugins page installs, enables, disables,
     # and removes the profile's bundles through the `pluginManager` Remote.
     # Without a profile-backed Host it reports itself unavailable.
