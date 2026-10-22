@@ -1,10 +1,10 @@
-import { access, chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, chmod, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { GenerateOptions, Message } from '@deepseek-ai/dsh-llm'
 import type { ImageAttachmentRef, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
-import { flattenPrompt, generateViaAgy, prepareAgyPrompt } from '../src/agy.ts'
+import { agyBinary, flattenPrompt, generateViaAgy, prepareAgyPrompt } from '../src/agy.ts'
 
 const ref: ImageAttachmentRef = {
   attachmentId: 'sha256:agy-image' as ImageAttachmentRef['attachmentId'],
@@ -54,25 +54,62 @@ describe('Antigravity image prompt', () => {
     expect(match?.[1]).toBeDefined()
     expect(await readFile(match?.[1] as string)).toEqual(Buffer.from([1, 2, 3, 4]))
     expect(prepared.prompt).toContain('Descreva.')
+    expect(prepared.workingDirectory).toBe(directory)
     await prepared.dispose()
     await expect(access(directory)).rejects.toThrow()
     await expect(prepared.dispose()).resolves.toBeUndefined()
   })
+
+  it('gives a text-only request an empty private working directory and grants no extra directory', async () => {
+    const prepared = await prepareAgyPrompt({ provider: 'gemini', model: 'gemini-4-argon-high', messages: [] }, new Map())
+    expect(prepared.addDirs).toEqual([])
+    expect(await readdir(prepared.workingDirectory)).toEqual([])
+    await prepared.dispose()
+    await expect(access(prepared.workingDirectory)).rejects.toThrow()
+  })
 })
 
-/** Run one fake agy executable that prints the given stderr and success JSON. */
-async function runFakeAgy(stderr: string): Promise<unknown> {
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
+
+describe('Antigravity binary resolution', () => {
+  it('prefers GEMINI_AGY_BINARY, then the installer location, then PATH', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'dsh-gemini-home-'))
+    try {
+      vi.stubEnv('HOME', home)
+      vi.stubEnv('GEMINI_AGY_BINARY', '/opt/agy/bin/agy')
+      expect(agyBinary()).toBe('/opt/agy/bin/agy')
+      vi.stubEnv('GEMINI_AGY_BINARY', '')
+      expect(agyBinary()).toBe('agy')
+      await mkdir(join(home, '.local', 'bin'), { recursive: true })
+      await writeFile(join(home, '.local', 'bin', 'agy'), '')
+      expect(agyBinary()).toBe(join(home, '.local', 'bin', 'agy'))
+    } finally {
+      await rm(home, { recursive: true, force: true })
+    }
+  })
+})
+
+/** Run one fake agy executable that prints the given stderr and JSON, then exits with `exit`. */
+async function runFakeAgy(
+  stderr: string,
+  result: object = { status: 'SUCCESS', response: 'ok' },
+  exit = 0,
+  cwd?: string,
+): Promise<unknown> {
   const directory = await mkdtemp(join(tmpdir(), 'dsh-gemini-fake-agy-'))
   try {
     const binary = join(directory, 'agy')
     await writeFile(binary, [
       '#!/bin/sh',
       `printf '%s\\n' ${JSON.stringify(stderr)} >&2`,
-      `printf '%s' '${JSON.stringify({ status: 'SUCCESS', response: 'ok' })}'`,
+      `printf '%s' '${JSON.stringify(result)}' | sed "s|@PWD@|$(pwd)|"`,
+      `exit ${String(exit)}`,
       '',
     ].join('\n'))
     await chmod(binary, 0o755)
-    return await generateViaAgy({ binary, model: 'gemini-4-argon-high', prompt: 'oi' })
+    return await generateViaAgy({ binary, model: 'gemini-4-argon-high', prompt: 'oi', cwd: cwd ?? directory })
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
@@ -87,5 +124,32 @@ describe.skipIf(process.platform === 'win32')('Antigravity model selection', () 
 
   it('accepts a successful run of a recognized model', async () => {
     await expect(runFakeAgy('')).resolves.toMatchObject({ status: 'SUCCESS', response: 'ok' })
+  })
+
+  it('runs agy inside the given working directory', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'dsh-gemini-cwd-'))
+    try {
+      await expect(runFakeAgy('', { status: 'SUCCESS', response: '@PWD@' }, 0, cwd))
+        .resolves.toMatchObject({ response: await realpath(cwd) })
+    } finally {
+      await rm(cwd, { recursive: true, force: true })
+    }
+  })
+})
+
+describe.skipIf(process.platform === 'win32')('Antigravity failures', () => {
+  it('asks for a terminal sign-in when agy has no Google account', async () => {
+    const failure = runFakeAgy(
+      'Authentication required. Please visit the URL to log in:\n  https://accounts.google.com/o/oauth2/auth?client_id=x',
+      { status: 'ERROR', response: '', error: 'authentication failed or timed out' },
+      1,
+    )
+    await expect(failure).rejects.toMatchObject({ code: 'SIGN_IN_REQUIRED' })
+    await expect(failure).rejects.toThrow(/rode `agy`, faça login/)
+  })
+
+  it('reports the error agy states in its JSON result', async () => {
+    await expect(runFakeAgy('', { status: 'ERROR', response: '', error: 'quota exhausted' }, 1))
+      .rejects.toMatchObject({ code: 'PROVIDER', message: 'agy falhou (código 1): quota exhausted' })
   })
 })

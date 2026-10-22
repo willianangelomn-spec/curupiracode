@@ -18,6 +18,8 @@ export interface GeminiModelDef {
   inputModalities: ModelModality[]
   /** Whether this model performs reasoning (thinking) the adapter can enable. */
   reasoning: boolean
+  /** Whether only the Antigravity CLI harness serves this model, so a missing `agy` never falls back to Code Assist. */
+  harnessOnly?: boolean
 }
 
 /**

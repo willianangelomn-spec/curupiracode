@@ -10,6 +10,7 @@
  */
 
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import { join } from 'node:path'
@@ -19,12 +20,18 @@ import type { AttachmentId, ImageMediaType, RequestImageAttachment } from '@deep
 
 /** Warning agy prints before replacing an unknown `--model` id with its default model. */
 const UNKNOWN_MODEL_WARNING = /not recognized as a known model/i
+/** Prompt agy prints, then waits on for a minute, when no Google sign-in is stored. */
+const AUTH_REQUIRED = /authentication required/i
+/** `error` agy reports in its JSON result after that wait expires. */
+const AUTH_FAILED = /authentication failed/i
 
 /** One parsed `agy --output-format json` run. */
 export interface AgyResult {
   conversation_id?: string
   status?: string
   response?: string
+  /** Failure summary agy reports beside `status: 'ERROR'`. */
+  error?: string
   duration_seconds?: number
   usage?: {
     input_tokens?: number
@@ -35,12 +42,16 @@ export interface AgyResult {
 }
 
 /**
- * Resolve the agy binary path: `GEMINI_AGY_BINARY` override, then the default
- * user-local install location, then bare `agy` (PATH lookup by spawn).
+ * Resolve the agy binary: the `GEMINI_AGY_BINARY` override, then the
+ * installer's default `~/.local/bin/agy` when that file exists, then bare
+ * `agy`, which `spawn` looks up on PATH.
+ * @returns the path or command name to spawn.
  */
 export function agyBinary(): string {
-  return process.env.GEMINI_AGY_BINARY
-    ?? os.homedir() + '/.local/bin/agy'
+  const override = process.env.GEMINI_AGY_BINARY
+  if (override !== undefined && override !== '') return override
+  const installed = join(os.homedir(), '.local', 'bin', 'agy')
+  return existsSync(installed) ? installed : 'agy'
 }
 
 /** File extension accepted by Antigravity's workspace image reader. */
@@ -111,26 +122,28 @@ export function flattenPrompt(
 export interface PreparedAgyPrompt {
   /** Text prompt containing `@path` references at each durable image position. */
   prompt: string
-  /** Directory granted to the Antigravity subprocess. */
+  /**
+   * Empty private directory the Antigravity subprocess runs in, so the CLI's
+   * own agent sees no user files; staged images live inside it.
+   */
+  workingDirectory: string
+  /** Directories granted to the Antigravity subprocess for staged images; empty without images. */
   addDirs: readonly string[]
   /** Remove the request-owned temporary files. Safe after partial preparation. */
   dispose: () => Promise<void>
 }
 
 /**
- * Materialize deterministic request images in a private temporary directory
- * and build the `@path` prompt Antigravity understands.
+ * Create the private working directory, materialize deterministic request
+ * images in it, and build the `@path` prompt Antigravity understands.
  * @param options - bounded provider-neutral request.
  * @param images - exact request images retained for this call.
- * @returns prompt, allowed directory, and an idempotent cleanup operation.
+ * @returns prompt, working and allowed directories, and an idempotent cleanup operation.
  */
 export async function prepareAgyPrompt(
   options: GenerateOptions,
   images: ReadonlyMap<AttachmentId, RequestImageAttachment>,
 ): Promise<PreparedAgyPrompt> {
-  if (images.size === 0) {
-    return { prompt: flattenPrompt(options), addDirs: [], dispose: () => Promise.resolve() }
-  }
   const directory = await mkdtemp(join(os.tmpdir(), 'dsh-gemini-'))
   let disposed = false
   const dispose = async (): Promise<void> => {
@@ -139,6 +152,9 @@ export async function prepareAgyPrompt(
     await rm(directory, { recursive: true, force: true })
   }
   try {
+    if (images.size === 0) {
+      return { prompt: flattenPrompt(options), workingDirectory: directory, addDirs: [], dispose }
+    }
     const imagePaths = new Map<AttachmentId, string>()
     let ordinal = 0
     for (const [attachmentId, image] of images) {
@@ -147,7 +163,7 @@ export async function prepareAgyPrompt(
       await writeFile(path, image.data, { mode: 0o600, signal: options.signal })
       imagePaths.set(attachmentId, path)
     }
-    return { prompt: flattenPrompt(options, imagePaths), addDirs: [directory], dispose }
+    return { prompt: flattenPrompt(options, imagePaths), workingDirectory: directory, addDirs: [directory], dispose }
   } catch (error: unknown) {
     await dispose().catch(() => {
       // The preparation error remains authoritative; the OS can reclaim an
@@ -159,20 +175,23 @@ export async function prepareAgyPrompt(
 
 /**
  * Run one non-interactive agy generation.
+ * @param options - binary, model id, flattened prompt, working directory, granted image directories, and cancellation.
  * @returns the parsed JSON result with `status: 'SUCCESS'`.
- * @throws {LlmError} code `ABORTED` when the caller signal fires; `PROVIDER`
- * when the binary fails, returns a non-zero exit, or emits unusable output.
- * A missing binary rejects with the raw ENOENT error so the caller can fall
- * back to the OAuth transport.
+ * @throws {LlmError} code `ABORTED` when the caller signal fires;
+ * `SIGN_IN_REQUIRED` when agy has no Google sign-in; `UNKNOWN_MODEL` when agy
+ * does not recognize the model; `PROVIDER` when the binary fails, returns a
+ * non-zero exit, or emits unusable output. A missing binary rejects with the raw ENOENT error so the
+ * caller can fall back to the OAuth transport.
  */
 export function generateViaAgy(options: {
   binary: string
   model: string
   prompt: string
+  cwd: string
   addDirs?: readonly string[]
   signal?: AbortSignal | undefined
 }): Promise<AgyResult> {
-  const { binary, model, prompt, addDirs = [], signal } = options
+  const { binary, model, prompt, cwd, addDirs = [], signal } = options
   return new Promise((resolve, reject) => {
     const child = spawn(binary, [
       '-p', prompt,
@@ -181,6 +200,7 @@ export function generateViaAgy(options: {
       '--disable-slash-commands',
       ...addDirs.flatMap(directory => ['--add-dir', directory]),
     ], {
+      cwd,
       signal,
       stdio: ['ignore', 'pipe', 'pipe'],
     })
@@ -221,10 +241,20 @@ export function generateViaAgy(options: {
         ))
         return
       }
+      // Without a stored sign-in agy prints a login URL, waits a minute, and
+      // exits; the URL belongs to that dead process, so the fix is a sign-in.
+      // `AUTH` is not used because Clients render it as an invalid API key.
+      if (AUTH_REQUIRED.test(stderr) || AUTH_FAILED.test(parsed?.error ?? '')) {
+        reject(new LlmError(
+          'O Antigravity CLI (`agy`) não está conectado a uma conta Google.'
+            + ' Abra um terminal, rode `agy`, faça login com sua conta Google e envie a mensagem de novo.',
+          'SIGN_IN_REQUIRED',
+        ))
+        return
+      }
       if (code !== 0) {
-        const detail = (parsed?.response !== undefined && parsed.response.length > 0
-          ? parsed.response
-          : stderr.trim().slice(0, 400)) || `exit code ${code}`
+        const detail = [parsed?.error, parsed?.response, stderr.trim().slice(0, 400)]
+          .find(text => text !== undefined && text.length > 0) ?? `exit code ${code}`
         reject(new LlmError(`agy falhou (código ${code}): ${detail}`, 'PROVIDER'))
         return
       }

@@ -198,6 +198,7 @@ export class GeminiAdapter extends LlmAdapter {
           binary: agyBinary(),
           model: options.model,
           prompt: agyPrompt.prompt,
+          cwd: agyPrompt.workingDirectory,
           addDirs: agyPrompt.addDirs,
           signal: options.signal,
         })
@@ -211,13 +212,15 @@ export class GeminiAdapter extends LlmAdapter {
           )
         }
         // Missing binary: fall back to the OAuth transport only when a Google
-        // grant already exists; fresh installs get the actionable message.
-        const grant = await readGrant(this.options.ctx)
+        // grant already exists and the model is not served by the agy harness
+        // alone; otherwise the user gets the actionable message.
+        const grant = def.harnessOnly === true ? undefined : await readGrant(this.options.ctx)
         if (grant === undefined) {
           throw new LlmError(
-            'O Antigravity CLI (`agy`) não está instalado nesta máquina.'
+            'O Antigravity CLI (`agy`) não foi encontrado em ~/.local/bin/agy nem no PATH.'
+              + (def.harnessOnly === true ? ` O ${def.name} só funciona dentro do harness do Antigravity CLI.` : '')
               + ' Instale-o, rode `agy` no terminal e faça login com sua conta Google uma vez;'
-              + ' depois os modelos Gemini funcionam aqui sem nenhuma chave de API.',
+              + ' se ele estiver em outra pasta, inicie o CurupiraCode com GEMINI_AGY_BINARY=/caminho/do/agy.',
             'PROVIDER',
             { cause: error },
           )

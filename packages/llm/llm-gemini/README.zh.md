@@ -42,7 +42,7 @@ kind: "package-reference"
 
 ### 选择模型
 
-内置目录遵循 `agy`，推理强度是 id 的一部分：Gemini 4 Argon（`gemini-4-argon-high`、`-medium`、`-low`）、Gemini 3.8 Flash、Gemini 3.7 Flash、Gemini 3.6 Flash、Gemini 3.5 Flash、Gemini 3.1 Pro，以及编写目录时 CLI 提供的 Claude 和 GPT-OSS id。Gemini 条目接受文本和图片输入；其他条目仅支持文本。可用的 id 取决于你的 Google 方案和 CLI 版本：Gemini 4 Argon 需要 agy 1.4.3 或更高版本以及包含该模型的方案。agy 不认识某个 id 时会静默改用默认模型作答；适配器会以 `UNKNOWN_MODEL` 拒绝该回答，并说明如何修复。
+内置目录遵循 `agy`，推理强度是 id 的一部分：Gemini 4 Argon（`gemini-4-argon-high`、`-medium`、`-low`）、Gemini 3.8 Flash、Gemini 3.7 Flash、Gemini 3.6 Flash、Gemini 3.5 Flash、Gemini 3.1 Pro，以及编写目录时 CLI 提供的 Claude 和 GPT-OSS id。Gemini 条目接受文本和图片输入；其他条目仅支持文本。可用的 id 取决于你的 Google 方案和 CLI 版本：Gemini 4 Argon 需要 agy 1.4.3 或更高版本以及包含该模型的方案，并且只在 agy harness 内运行，因此从不使用 Code Assist 回退。agy 不认识某个 id 时会静默改用默认模型作答；适配器会以 `UNKNOWN_MODEL` 拒绝该回答，并说明如何修复。agy 没有 Google 登录时会等待一分钟后退出；适配器随后以 `SIGN_IN_REQUIRED` 失败，并提示你在终端运行 `agy`。
 
 ### 配置
 
@@ -54,7 +54,7 @@ kind: "package-reference"
 | `maxRequestImageBytes` | `20971520` | 每个请求的 base64 图片负载；超出时请求会要求对话卸载最旧的图片。 |
 | `retryPolicy` | `null` | 提供方自有的重试策略；`null` 使用重试五次的普通模式。 |
 
-`GEMINI_AGY_BINARY` 覆盖 CLI 路径（默认 `~/.local/bin/agy`），`GEMINI_OAUTH_CLIENT_ID` 覆盖回退传输的 OAuth 客户端。
+设置了 `GEMINI_AGY_BINARY` 时适配器运行它，否则在安装程序的 `~/.local/bin/agy` 存在时运行它，再否则运行 `PATH` 中的 `agy`。`GEMINI_OAUTH_CLIENT_ID` 覆盖回退传输的 OAuth 客户端。
 
 -----
 
@@ -64,7 +64,7 @@ kind: "package-reference"
 <details>
 <summary>实现内部细节——点击展开</summary>
 
-[`index.ts`](src/index.ts) 注册 `gemini` 路由、其可配置提供方目录条目、基于有效目录的模型发现，以及授权接缝上的 Google 登录流程。[`agy.ts`](src/agy.ts) 把请求扁平化为一个 `agy -p` 提示词，把请求图片暂存为私有临时文件，以 `@path` 引用并通过 `--add-dir` 授权，然后解析 JSON 结果。[`convert.ts`](src/convert.ts) 为回退构建 Code Assist `streamGenerateContent` 请求体：tool 角色消息成为以所回答的助手调用命名的 `functionResponse` 部分，连续结果共用一个轮次，图片以 `inlineData` 发送。[`images.ts`](src/images.ts) 读取确定性的请求版本，并与其他适配器一样以 `IMAGE_OFFLOAD_REQUIRED` 失败，而不是自行丢弃图片。[`models.ts`](src/models.ts) 保存内置目录，并把配置的模型合并到其上。
+[`index.ts`](src/index.ts) 注册 `gemini` 路由、其可配置提供方目录条目、基于有效目录的模型发现，以及授权接缝上的 Google 登录流程。[`agy.ts`](src/agy.ts) 把请求扁平化为一个 `agy -p` 提示词，在空的私有临时目录中运行 agy，使 CLI 自己的智能体看不到用户文件，把请求图片暂存在该目录中，以 `@path` 引用并通过 `--add-dir` 授权，然后解析 JSON 结果。[`convert.ts`](src/convert.ts) 为回退构建 Code Assist `streamGenerateContent` 请求体：tool 角色消息成为以所回答的助手调用命名的 `functionResponse` 部分，连续结果共用一个轮次，图片以 `inlineData` 发送。[`images.ts`](src/images.ts) 读取确定性的请求版本，并与其他适配器一样以 `IMAGE_OFFLOAD_REQUIRED` 失败，而不是自行丢弃图片。[`models.ts`](src/models.ts) 保存内置目录，并把配置的模型合并到其上。
 
 </details>
 

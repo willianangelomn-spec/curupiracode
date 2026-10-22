@@ -84,7 +84,7 @@ describe('catalog', () => {
       { id: 'claude-opus-5-5-thinking' },
     ]))
     expect(merged[0]).toEqual({
-      id: 'gemini-4-argon-high', name: 'Argon', contextWindow: 2_000_000, inputModalities: ['text', 'image'], reasoning: false,
+      id: 'gemini-4-argon-high', name: 'Argon', contextWindow: 2_000_000, inputModalities: ['text', 'image'], reasoning: false, harnessOnly: true,
     })
     expect(merged.at(-1)).toEqual({
       id: 'claude-opus-5-5-thinking', name: 'claude-opus-5-5-thinking', contextWindow: 1_048_576, inputModalities: ['text'], reasoning: false,

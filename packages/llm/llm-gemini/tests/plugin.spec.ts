@@ -1,5 +1,6 @@
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
+import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { LlmAdapter, LlmConfigurableProvider, LlmDiscoveredModel } from '@deepseek-ai/dsh-llm'
 import * as plugin from '../src/index.ts'
 
@@ -47,6 +48,22 @@ describe('llm-gemini plugin', () => {
     expect(discovered?.at(-1)).toEqual({ id: 'claude-opus-5-5-thinking', name: 'Claude Opus 5.5 (Thinking)', contextWindow: 1_048_576 })
     const resolved = await adapters[0]?.resolveModel('gemini', 'claude-opus-5-5-thinking')
     expect(resolved?.name).toBe('Claude Opus 5.5 (Thinking)')
+  })
+
+  it('keeps Gemini 4 Argon on the agy harness when agy is missing', async () => {
+    vi.stubEnv('GEMINI_AGY_BINARY', '/nonexistent/agy')
+    try {
+      const { adapters } = await mount([{ id: 'gemini-4-argon-high', name: 'Argon (custom name)' }])
+      const stream = adapters[0]?.stream({
+        provider: 'gemini',
+        model: 'gemini-4-argon-high',
+        messages: [createUserMessage({ content: [{ type: 'text', text: 'Oi' }], source: { kind: 'user' } })],
+      })
+      const drain = async () => { for await (const _chunk of stream ?? []) { /* the first step fails */ } }
+      await expect(drain()).rejects.toThrow(/O Argon \(custom name\) só funciona dentro do harness do Antigravity CLI/)
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 
   it('refuses a model id outside the effective catalog', async () => {

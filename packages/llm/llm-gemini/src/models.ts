@@ -22,6 +22,7 @@ export const GEMINI_MODELS: readonly GeminiModelDef[] = [
     contextWindow: 1_048_576,
     inputModalities: ['text', 'image'],
     reasoning: false,
+    harnessOnly: true,
   },
   {
     id: 'gemini-4-argon-medium',
@@ -29,6 +30,7 @@ export const GEMINI_MODELS: readonly GeminiModelDef[] = [
     contextWindow: 1_048_576,
     inputModalities: ['text', 'image'],
     reasoning: false,
+    harnessOnly: true,
   },
   {
     id: 'gemini-4-argon-low',
@@ -36,6 +38,7 @@ export const GEMINI_MODELS: readonly GeminiModelDef[] = [
     contextWindow: 1_048_576,
     inputModalities: ['text', 'image'],
     reasoning: false,
+    harnessOnly: true,
   },
   {
     id: 'gemini-3.8-flash-high',
@@ -160,15 +163,19 @@ export const GEMINI_MODELS: readonly GeminiModelDef[] = [
 
 /**
  * Merge configured models over the shipped catalog: a configured id replaces
- * the shipped entry of the same id in place, and new ids follow the catalog in
- * configuration order.
+ * the shipped entry of the same id in place, keeping its `harnessOnly` flag,
+ * and new ids follow the catalog in configuration order.
  * @param configured - models declared in the row config.
  * @returns the effective catalog in display order.
  */
 export function mergeModels(configured: readonly GeminiModelDef[]): readonly GeminiModelDef[] {
   if (configured.length === 0) return GEMINI_MODELS
   const byId = new Map(configured.map(model => [model.id, model]))
-  const merged = GEMINI_MODELS.map(model => byId.get(model.id) ?? model)
+  const merged = GEMINI_MODELS.map((model) => {
+    const override = byId.get(model.id)
+    if (override === undefined) return model
+    return model.harnessOnly === true ? { ...override, harnessOnly: true } : override
+  })
   const shipped = new Set(GEMINI_MODELS.map(model => model.id))
   for (const model of configured) if (!shipped.has(model.id)) merged.push(model)
   return merged

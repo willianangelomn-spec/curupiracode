@@ -42,7 +42,7 @@ The base bundle mounts the adapter, so a CurupiraCode installation only needs th
 
 ### Choose a model
 
-The shipped catalog follows `agy`, where the reasoning effort is part of the id: Gemini 4 Argon (`gemini-4-argon-high`, `-medium`, `-low`), Gemini 3.8 Flash, Gemini 3.7 Flash, Gemini 3.6 Flash, Gemini 3.5 Flash, Gemini 3.1 Pro, plus the Claude and GPT-OSS ids the CLI offered when the catalog was written. Gemini entries accept text and image input; the others are text-only. Which ids work depends on your Google plan and CLI version: Gemini 4 Argon needs agy 1.4.3 or later and a plan that includes it. When agy does not recognize an id it would silently answer with its default model; the adapter refuses that answer with `UNKNOWN_MODEL` and says how to fix it.
+The shipped catalog follows `agy`, where the reasoning effort is part of the id: Gemini 4 Argon (`gemini-4-argon-high`, `-medium`, `-low`), Gemini 3.8 Flash, Gemini 3.7 Flash, Gemini 3.6 Flash, Gemini 3.5 Flash, Gemini 3.1 Pro, plus the Claude and GPT-OSS ids the CLI offered when the catalog was written. Gemini entries accept text and image input; the others are text-only. Which ids work depends on your Google plan and CLI version: Gemini 4 Argon needs agy 1.4.3 or later and a plan that includes it, and it runs only inside the agy harness, so it never uses the Code Assist fallback. When agy does not recognize an id it would silently answer with its default model; the adapter refuses that answer with `UNKNOWN_MODEL` and says how to fix it. When agy has no Google sign-in it waits a minute for one and exits; the adapter then fails with `SIGN_IN_REQUIRED` and asks you to run `agy` in a terminal.
 
 ### Configure
 
@@ -54,7 +54,7 @@ The shipped catalog follows `agy`, where the reasoning effort is part of the id:
 | `maxRequestImageBytes` | `20971520` | Base64 image payload per request; beyond it the request asks the conversation to offload its oldest images. |
 | `retryPolicy` | `null` | Provider-owned retry policy; `null` uses normal mode with five retries. |
 
-`GEMINI_AGY_BINARY` overrides the CLI path (default `~/.local/bin/agy`), and `GEMINI_OAUTH_CLIENT_ID` overrides the OAuth client of the fallback transport.
+The adapter runs `GEMINI_AGY_BINARY` when it is set, otherwise the installer's `~/.local/bin/agy` when it exists, otherwise `agy` from `PATH`. `GEMINI_OAUTH_CLIENT_ID` overrides the OAuth client of the fallback transport.
 
 -----
 
@@ -64,7 +64,7 @@ The shipped catalog follows `agy`, where the reasoning effort is part of the id:
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-[`index.ts`](src/index.ts) registers the `gemini` route, its configurable-provider directory entry, model discovery over the effective catalog, and the Google sign-in flow on the authorization seam. [`agy.ts`](src/agy.ts) flattens the request into one `agy -p` prompt, stages request images as private temporary files referenced with `@path` and granted through `--add-dir`, and parses the JSON result. [`convert.ts`](src/convert.ts) builds the Code Assist `streamGenerateContent` body for the fallback: tool-role messages become `functionResponse` parts named after the assistant call they answer, consecutive results share one turn, and images travel as `inlineData`. [`images.ts`](src/images.ts) reads deterministic request versions and, like the other adapters, fails with `IMAGE_OFFLOAD_REQUIRED` instead of dropping images itself. [`models.ts`](src/models.ts) holds the shipped catalog and merges configured models over it.
+[`index.ts`](src/index.ts) registers the `gemini` route, its configurable-provider directory entry, model discovery over the effective catalog, and the Google sign-in flow on the authorization seam. [`agy.ts`](src/agy.ts) flattens the request into one `agy -p` prompt, runs agy in an empty private temporary directory so the CLI's own agent sees no user files, stages request images in that directory referenced with `@path` and granted through `--add-dir`, and parses the JSON result. [`convert.ts`](src/convert.ts) builds the Code Assist `streamGenerateContent` body for the fallback: tool-role messages become `functionResponse` parts named after the assistant call they answer, consecutive results share one turn, and images travel as `inlineData`. [`images.ts`](src/images.ts) reads deterministic request versions and, like the other adapters, fails with `IMAGE_OFFLOAD_REQUIRED` instead of dropping images itself. [`models.ts`](src/models.ts) holds the shipped catalog and merges configured models over it.
 
 </details>
 
