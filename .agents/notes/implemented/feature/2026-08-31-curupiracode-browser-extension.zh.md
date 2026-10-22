@@ -14,7 +14,7 @@ CurupiraCode 需要一款开放的浏览器扩展，把用户指令转换为当�
 
 `apps/browser-extension` 提供一款面向 Chrome 与 Edge 116 及以上版本的 Chromium Manifest V3 侧边栏扩展。浏览器操作按钮打开侧边栏。只有用户手势发生后，`activeTab` 与 `scripting` 才注入 content script；manifest 不授予 `<all_urls>`，唯一持久 host permission 是 `127.0.0.1` 与 `localhost` 的 HTTP 回环地址。公开 manifest key 固定扩展 id，使本地桥可以识别一个可复现来源，而无需分发私钥材料。
 
-content script 捕获标题、URL、选中文本、有界的可见页面文本，以及有界的交互元素列表；它从不捕获字段当前值。元素获得仅对本次快照有效的短 id，模型不编写 CSS selector。新的 `browser` agent preset 只包含一份完整 persona，不含模型可见工具或运行时上下文，并把全部页面文本与标签视为不可信数据。Curupira Memória 的模型可见插件从进程全局组合迁入普通的 `standard`、`code` 与 `cordis` agent scope；因此受限 preset 保持为空，而底层 knowledge 服务仍然共享。
+content script 捕获标题、URL、选中文本、有界的可见页面文本，以及有界的交互元素列表；它从不捕获字段当前值。元素获得仅对本次快照有效的短 id，模型不编写 CSS selector。新的 `browser` agent preset 只包含一份完整 persona，不含模型可见工具或运行时上下文，并把全部页面文本与标签视为不可信数据。Curupira Memória 的模型可见插件从进程全局组合迁入普通的 `standard`、`ptc` 与 `cordis` agent scope；因此受限 preset 保持为空，而底层 knowledge 服务仍然共享。
 
 侧边栏将 **Conversa（对话）** 与 **Automação（自动化）** 分开。对话会创建或恢复一个持久 Harness 会话，扩展存储中只保存其 session id，并从 `session.history` 投影用户与 assistant 消息；内部页面包装不会显示在对话记录中。可选的页面上下文复选框会在发送时捕获当前页面。独立的 `browser-chat` preset 不含工具，以巴西葡萄牙语进行对话，拒绝捕获页面数据中嵌入的指令，并把修改页面的请求引导到 Automação。新建对话只让面板脱离上一会话，不会删除其持久 history。
 
@@ -26,7 +26,7 @@ content script 捕获标题、URL、选中文本、有界的可见页面文本�
 
 宏是可移植的 JSON，并支持显式导出和导入。导入只接受带版本的 `fill`、`select`、`check` 与中间 `advance` 动作集合，限制页面数、动作数和值的长度，并要求所有页面使用同一个 HTTP 来源。密码、支付卡、验证码和上传控件会在捕获时排除，并在回放时再次检查。由于导出的值可能包含个人信息，UI 与 README 会明确说明该文件是由用户控制的本地数据，而不是可以安全共享的模板。
 
-Host connection 新增 `trustedExtensionIds`，默认值为从 manifest 推导的 CurupiraCode id。只有精确的 `chrome-extension://<id>` 来源，且 `Host` 为回环地址时，才可进行预检和 POST。扩展 GET、WebSocket upgrade、格式错误或未声明的 id、普通跨站页面以及非回环 host 仍被拒绝。特权 RPC 保留内层同源回环检查，因此扩展 CORS 无法打开配置、凭据、原生桌面操作或 preset 创作。这里依赖的是已安装来源身份，只是一条开发桥梁，不是用户认证；token 配对仍属于 roadmap 工作。
+通过回环地址接受由 manifest 推导的 `chrome-extension://<id>` 来源的 Host 桥接（`trustedExtensionIds`）在 DeepSeek Harness 0.2 基础上已撤回；0.2 的连接只接受携带浏览器 cookie 或 Peer 凭据的 `/api` 请求，[0.2 基础说明](../architecture/2026-10-22-curupiracode-dsh-0-2-base.zh.md)记录了原因。在带可见 token 配对的桥接取代它之前，服务器会以 HTTP 403 拒绝扩展的 RPC，而本地宏的录制和回放仍可使用。
 
 ## 可移植性
 
@@ -34,7 +34,7 @@ Host connection 新增 `trustedExtensionIds`，默认值为从 manifest 推导�
 
 ## 验证
 
-单元测试固定了回环 URL 归一化、原生 Fetch 调用、完整 RPC 信封、chat 会话创建、不泄露页面包装的对话投影、严格 JSON 规划、有界元素 id、敏感字段拒绝、风险分类、仅表单动作的强制约束、有效的选择项、从表单 prompt 排除敏感与提交控件、宏事件去重、可移植 schema 校验、同源强制约束、可执行动作拒绝以及最终步骤的前进动作移除。真实发布组合的 e2e 会同时挂载 `browser` 与 `browser-chat`，断言其精确 prompt 快照与空工具目录，并另外证明普通 preset 仍保留 Curupira Memória。Host 测试覆盖有效和无效扩展 id、仅限回环的来源识别、允许的预检 header 与冒充者拒绝。本地重启构建后的 Host 后，发布来源的预检收到 204，`host.describe` 收到 200，未声明扩展 id 收到 403，实时 preset 名单也暴露两个受限浏览器模式。Manifest 验证会推导并固定稳定 id，并拒绝非回环 host permission。
+单元测试固定了回环 URL 归一化、原生 Fetch 调用、完整 RPC 信封、chat 会话创建、不泄露页面包装的对话投影、严格 JSON 规划、有界元素 id、敏感字段拒绝、风险分类、仅表单动作的强制约束、有效的选择项、从表单 prompt 排除敏感与提交控件、宏事件去重、可移植 schema 校验、同源强制约束、可执行动作拒绝以及最终步骤的前进动作移除。真实发布组合的 e2e 会同时挂载 `browser` 与 `browser-chat`，断言其精确 prompt 快照与空工具目录，并另外证明普通 preset 仍保留 Curupira Memória。Manifest 验证会推导并固定稳定 id，并拒绝非回环 host permission。
 
 ## 考虑过的替代方案
 
@@ -52,4 +52,4 @@ Host connection 新增 `trustedExtensionIds`，默认值为从 manifest 推导�
 
 ## 后果
 
-该原型现已能利用用户现有的 CurupiraCode provider，在当前页面上进行持久对话与有界自动化，不需要额外 API 凭据。回复目前会在持久 turn 完成后整体出现，而不是逐 token 流式显示。它有意一次只处理一个已捕获页面；流式输出、多标签比较、持久引用、可恢复导航工作流、本地操作日志查看器、token 配对、商店打包与 Firefox 支持仍是未来工作。公开 manifest key 能稳定身份，却不能认证一个人，因此桥保持仅限回环，也不得被复用为远程访问安全机制。
+该原型现已能利用用户现有的 CurupiraCode provider，在当前页面上进行持久对话与有界自动化，不需要额外 API 凭据。回复目前会在持久 turn 完成后整体出现，而不是逐 token 流式显示。它有意一次只处理一个已捕获页面；流式输出、多标签比较、持久引用、可恢复导航工作流、本地操作日志查看器、token 配对、商店打包与 Firefox 支持仍是未来工作。公开 manifest key 能稳定身份，却不能认证一个人，因此替代桥接必须配对用户批准的 token，不能只依赖扩展 id。

@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-curupira-semantic-memory-and-session-deletion.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-30-curupira-semantic-memory-and-session-deletion.md
-2026-08-30-curupira-semantic-memory-and-session-deletion.md: da32c92af561e9b8a2bed5edec21bd97177055b7
-2026-08-30-curupira-semantic-memory-and-session-deletion.zh.md: 0f2e58cf02089a85fd9ddec98b0b851c55ccace6
+/agent-note-curupira-semantic-memory-and-session-deletion:
+  en: 967cc5f77ffaf985
+  zh: a5f5f5fa99d4f7ff
+/agent-note-curupira-semantic-memory-and-session-deletion/problem:
+  en: 37196452f08e8139
+  zh: 1b79ab524050d819
+/agent-note-curupira-semantic-memory-and-session-deletion/decision:
+  en: b0a252aadb68660b
+  zh: 2f135704cbf14ed4
+/agent-note-curupira-semantic-memory-and-session-deletion/portability:
+  en: 23b3586f093f3826
+  zh: cbed0c3c305eacc4
+/agent-note-curupira-semantic-memory-and-session-deletion/verification:
+  en: f23793bc9dc4dcdb
+  zh: e36969c668a5ccee
+/agent-note-curupira-semantic-memory-and-session-deletion/alternatives-considered:
+  en: cd24b7cfe66bae6d
+  zh: b4a667daef4a56b0
+/agent-note-curupira-semantic-memory-and-session-deletion/consequences:
+  en: c3af17f0449c6bd2
+  zh: a7ff1c1be306d518

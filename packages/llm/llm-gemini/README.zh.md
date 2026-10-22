@@ -34,7 +34,7 @@ kind: "package-reference"
 - id: llm-gemini
   name: '@deepseek-ai/dsh-llm-gemini'
   config:
-    # 本地 CLI 接受的额外 id（用 `agy models` 列出）。
+    # Extra ids the local CLI accepts (list them with `agy models`).
     models:
       - id: claude-opus-5-5-thinking
         name: Claude Opus 5.5 (Thinking)

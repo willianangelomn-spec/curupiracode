@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-curupiracode-browser-extension.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-curupiracode-browser-extension.md
-2026-08-31-curupiracode-browser-extension.md: daa12d0fab3922551701ab5994e98e033c6517fe
-2026-08-31-curupiracode-browser-extension.zh.md: 820cd5169fd902e3e70ac8730572a28287152905
+/agent-note-curupiracode-browser-extension-preview-executor:
+  en: f80d0c2ac9911cbd
+  zh: 1cef15b313fe2ca1
+/agent-note-curupiracode-browser-extension-preview-executor/problem:
+  en: 025ed93fcb9eaeb8
+  zh: c121c5078b035433
+/agent-note-curupiracode-browser-extension-preview-executor/decision:
+  en: 0c59beadba7a95d3
+  zh: 725fb6c52df90d93
+/agent-note-curupiracode-browser-extension-preview-executor/portability:
+  en: 7f9c2ec5e153d6ad
+  zh: 7531135723cbb2a6
+/agent-note-curupiracode-browser-extension-preview-executor/verification:
+  en: c35ce10817f9ed9c
+  zh: 7a33ae64306a8552
+/agent-note-curupiracode-browser-extension-preview-executor/alternatives-considered:
+  en: 18a096d08c6121c4
+  zh: 003b19d01f360b21
+/agent-note-curupiracode-browser-extension-preview-executor/consequences:
+  en: 12375423c04dfbd1
+  zh: c36f06ffe1c87789

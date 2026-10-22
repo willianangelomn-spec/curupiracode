@@ -12,7 +12,7 @@ Manifest V3 extension with persistent side-panel chat, reviewed browser automati
 4. Select `apps/browser-extension/dist`.
 5. Keep CurupiraCode running at `http://127.0.0.1:3080` and click the extension icon.
 
-The manifest `key` fixes the id `ndfighammhdpfaejmadojjaaelmpadek`. The local server accepts RPC from that id only over loopback; other extensions and ordinary pages receive HTTP 403.
+The manifest `key` fixes the id `ndfighammhdpfaejmadojjaaelmpadek`. Since the DeepSeek Harness 0.2 base, the server's `/api` admits only same-origin requests that carry the browser session cookie, so it refuses the extension's `chrome-extension://` origin with HTTP 403. The side panel opens and local macro recording and replay work, but conversation, planning, and form answering fail until a bridge with visible pairing lands.
 
 ## Security flow
 
@@ -47,4 +47,4 @@ Each fresh page snapshot can change the request after the stable restricted pres
 - Automation handles one captured page at a time; navigation requires a new capture and plan.
 - Supported planned actions are `click`, `fill`, `select`, `check`, and `scroll`; form mode narrows this to `fill`, `select`, and `check`.
 - Firefox requires a separate `sidebar_action` manifest and remains future work.
-- The stable extension id identifies an installed origin but does not authenticate a person, so the bridge stays loopback-only.
+- The extension still calls the removed pre-0.2 `/api/<method>` RPC. The replacement needs a Host bridge that pins the extension origin and authenticates it with a pairing token the user approves from an authenticated CurupiraCode page; the stable extension id alone identifies an installed origin but does not authenticate a person.

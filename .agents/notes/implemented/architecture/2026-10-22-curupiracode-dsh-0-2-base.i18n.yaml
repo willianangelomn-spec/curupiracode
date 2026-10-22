@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-10-22-curupiracode-dsh-0-2-base.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-22-curupiracode-dsh-0-2-base.md
+/agent-note-curupiracode-on-the-deepseek-harness-0-2-base:
+  en: cc1c87217fd6bbda
+  zh: a7941faba6eca50c
+/agent-note-curupiracode-on-the-deepseek-harness-0-2-base/problem:
+  en: fe6e7038524b08e9
+  zh: 2c3da6a85f3b0832
+/agent-note-curupiracode-on-the-deepseek-harness-0-2-base/decision:
+  en: 7661af5232cd796e
+  zh: 7507ca21507ba938
+/agent-note-curupiracode-on-the-deepseek-harness-0-2-base/decision/withdrawn-features:
+  en: 6eef372e627c0160
+  zh: 480915a40c7c9e41
+/agent-note-curupiracode-on-the-deepseek-harness-0-2-base/alternatives-considered:
+  en: af7af0532d607828
+  zh: 0061bd81989524f6
+/agent-note-curupiracode-on-the-deepseek-harness-0-2-base/consequences:
+  en: 2455b47105997c93
+  zh: 41a9996e84e90cca

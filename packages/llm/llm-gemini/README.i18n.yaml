@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/llm/llm-gemini/README.md
-README.md: 3756e38ebac206a7082782363ee0483eca190e39
-README.zh.md: 15c361873d47d4dd063540d3f7c562fa405f59e1
+/:
+  en: 7ae3b8e6b3095a74
+  zh: 406157abe6f0b8d9
+/deepseek-ai-dsh-llm-gemini:
+  en: c4a8137b5cb5e083
+  zh: 8017aea31803ec70
+/deepseek-ai-dsh-llm-gemini/summary:
+  en: aa13cbb234c4198f
+  zh: 3caa4d8c08519321
+/deepseek-ai-dsh-llm-gemini/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 1ef82f8fbca7499c
+/deepseek-ai-dsh-llm-gemini/use-this-package:
+  en: 673510da9d4a413c
+  zh: 9e87e86cc53e813b
+/deepseek-ai-dsh-llm-gemini/use-this-package/choose-a-model:
+  en: 7961974a52c1fe0d
+  zh: 383668b2a6cfb6bd
+/deepseek-ai-dsh-llm-gemini/use-this-package/configure:
+  en: da721e030fa26707
+  zh: 1cf472933c92ca74
+/deepseek-ai-dsh-llm-gemini/understand-the-implementation:
+  en: 242855c840c89912
+  zh: c1291328ba3a8432
+/deepseek-ai-dsh-llm-gemini/further-exploration:
+  en: 877870d8d7de521b
+  zh: 6fba23c6d5b8a551
+/deepseek-ai-dsh-llm-gemini/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-llm-gemini/model-experience/gemini-request:
+  en: a3134a2026978ff2
+  zh: 7593193793eb3fa0
+/deepseek-ai-dsh-llm-gemini/model-experience/gemini-request/what-the-model-sees:
+  en: 31ae8088cddc4a86
+  zh: 59e54432d2ddbb23
+/deepseek-ai-dsh-llm-gemini/model-experience/gemini-request/token-effect:
+  en: 76dbdb8707fc7042
+  zh: d6da4044bc46b172
+/deepseek-ai-dsh-llm-gemini/model-experience/gemini-request/kv-cache-effect:
+  en: 60d2c099691ada7d
+  zh: e5031e03e574d604
+/deepseek-ai-dsh-llm-gemini/known-limitations-and-deferred-work:
+  en: d9bc59d7fffe8f2a
+  zh: 31b3308cc2adcfe0
+/deepseek-ai-dsh-llm-gemini/known-limitations-and-deferred-work/dev-note:
+  en: ff5c35bfe63357fd
+  zh: cdd553a38206f058

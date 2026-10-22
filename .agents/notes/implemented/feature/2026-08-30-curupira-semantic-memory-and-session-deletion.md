@@ -16,7 +16,7 @@ The local knowledge store keeps SQLite FTS5 as the mandatory baseline and adds o
 
 The base knowledge tools register `knowledge_related` and a system-prompt section that directs the agent to search the user's vault proactively when a request may depend on it, preserve passage provenance, and never invent citations. The originals remain content-addressed and unchanged. This milestone supplies the semantic engine and relation API; an Obsidian-style graph/editor interface remains a later interface milestone.
 
-Each ordinary session row now exposes a destructive `Apagar conversa` action beside the existing non-destructive archive action. The UI requires explicit confirmation. The RPC refuses subagent-owned or foreign-live sessions, retires a Host-owned live agent, detaches workspace memberships, and permanently deletes durable JSONL or SQLite session data. The destructive RPC is loopback-only until the Host has real remote authentication.
+The permanent `Apagar conversa` action this note introduced is withdrawn on the DeepSeek Harness 0.2 base, where archive is the only removal action; [the 0.2 base note](../architecture/2026-10-22-curupiracode-dsh-0-2-base.md) records why.
 
 ## Portability
 
@@ -24,7 +24,7 @@ No personal filesystem path is embedded. The vault defaults to `<DSH_HOME>/knowl
 
 ## Verification
 
-Store tests cover semantic retrieval beyond shared keywords, related-document ranking, vector backfill, lexical fallback, provenance, deduplication, and removal. A real ONNX smoke test produced normalized 384-dimensional embeddings using the portable cache. Session tests cover JSONL and SQLite durable deletion, API transport, confirmation gating, danger styling, and client state removal. The client bundles and the local Web composition build and serve after restart.
+Store tests cover semantic retrieval beyond shared keywords, related-document ranking, vector backfill, lexical fallback, provenance, deduplication, and removal. A real ONNX smoke test produced normalized 384-dimensional embeddings using the portable cache. The client bundles and the local Web composition build and serve after restart.
 
 ## Alternatives considered
 
@@ -38,4 +38,4 @@ Store tests cover semantic retrieval beyond shared keywords, related-document ra
 
 ## Consequences
 
-Curupira Memória can discover Portuguese and multilingual conceptual matches locally and expose related materials without Gemini, DeepSeek, or another paid API. The first neural search may take longer while the model downloads, and semantic ranking currently scans at most 50,000 stored passage vectors in-process; larger vaults will need a dedicated approximate-nearest-neighbor index. Permanent deletion cannot be undone, so the confirmation describes that boundary and archiving remains available for reversible cleanup.
+Curupira Memória can discover Portuguese and multilingual conceptual matches locally and expose related materials without Gemini, DeepSeek, or another paid API. The first neural search may take longer while the model downloads, and semantic ranking currently scans at most 50,000 stored passage vectors in-process; larger vaults will need a dedicated approximate-nearest-neighbor index.

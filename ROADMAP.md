@@ -30,7 +30,8 @@ Entregas atuais:
 
 - [x] nome, favicon e wordmark CurupiraCode;
 - [x] símbolo em forma de trilha/circuito com pegadas invertidas;
-- [x] tema escuro local e experiência pt-BR;
+- [x] paleta CurupiraCode como plugin de marca sobre qualquer tema e experiência pt-BR como pacote de idioma;
+- [x] base sincronizada com o DeepSeek Harness 0.2, com marca e idioma em plugins para reduzir conflitos nas próximas atualizações;
 - [x] onboarding com identidade e atribuição corretas;
 - [x] comando `curupiracode`, preservando `dsh` como alias legado;
 - [x] pesquisa DuckDuckGo + Google News integrada ao bundle padrão;
@@ -96,9 +97,10 @@ código aberto, backend selecionável e controle local.
 
 Estado atual: **primeiro protótipo funcional para Chrome e Edge**. A extensão Manifest V3 oferece conversa
 persistente com contexto opcional da página e um modo separado de automação. Ambos usam presets sem ferramentas
-de sistema; somente a automação produz um plano JSON, mostra a prévia e executa ações aprovadas. A ponte aceita
-somente o ID estável da extensão em loopback; streaming, pareamento por token efêmero, a variante Firefox e a
-publicação nas lojas permanecem neste marco.
+de sistema; somente a automação produz um plano JSON, mostra a prévia e executa ações aprovadas. Desde a base DeepSeek
+Harness 0.2, o servidor só aceita a interface autenticada por cookie, e a ponte antiga por ID estável deixou de
+funcionar: a próxima entrega deste marco é uma ponte no host com pareamento visível por token. Streaming, a
+variante Firefox e a publicação nas lojas também permanecem neste marco.
 
 ### Primeira versão
 
@@ -114,8 +116,8 @@ publicação nas lojas permanecem neste marco.
 - [x] conversar, resumir e explicar com histórico restaurado diretamente no painel;
 - [ ] comparar abas e extrair para tabela com resultados persistentes no painel;
 - [ ] citações que retornam à página e ao trecho de origem;
-- [ ] conexão autenticada com token efêmero e pareamento visível; o protótipo atual usa origem estável,
-  loopback obrigatório e bloqueio separado dos RPCs privilegiados;
+- [ ] conexão autenticada com token e pareamento visível, portada para a API tipada do dsh 0.2; até lá,
+  conversa, planejamento e respostas de formulário da extensão recebem HTTP 403;
 - [x] `activeTab` sem `<all_urls>`; a extensão solicita somente acesso HTTP a `127.0.0.1` e `localhost`.
 
 ### Ponte local

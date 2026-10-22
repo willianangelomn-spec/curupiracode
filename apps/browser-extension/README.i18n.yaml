@@ -1,6 +1,31 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write apps/browser-extension/README.md
-README.md: 40caecbe0cefea2bfcd33d95f550a14a60c63583
-README.zh.md: 5eadfef074c021de11113f879ef87f52a4b34518
+/curupiracode-extension-for-chrome-and-edge:
+  en: f3088e6819efd7c5
+  zh: 015c3b75472f2a99
+/curupiracode-extension-for-chrome-and-edge/development-installation:
+  en: 0dc2f617e7be9bd4
+  zh: 058eebf24f3dddd9
+/curupiracode-extension-for-chrome-and-edge/security-flow:
+  en: 198ec5f62f8e7e97
+  zh: 9b9b434ed7859e31
+/curupiracode-extension-for-chrome-and-edge/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/curupiracode-extension-for-chrome-and-edge/model-experience/browser-planning:
+  en: 350ea66ca566fea1
+  zh: 3061a9750968bdaa
+/curupiracode-extension-for-chrome-and-edge/model-experience/browser-planning/what-the-model-sees:
+  en: bf39e8d0b7b27a76
+  zh: d558a7e2b968f8af
+/curupiracode-extension-for-chrome-and-edge/model-experience/browser-planning/token-effect:
+  en: 4f244beca38f6903
+  zh: cb194db81fdabff7
+/curupiracode-extension-for-chrome-and-edge/model-experience/browser-planning/kv-cache-effect:
+  en: 82ec4a010e5ac0d5
+  zh: 056859a13eaf03df
+/curupiracode-extension-for-chrome-and-edge/known-limitations-and-deferred-work:
+  en: 379c105f9dcc1c2e
+  zh: d0207d0a85a764dd

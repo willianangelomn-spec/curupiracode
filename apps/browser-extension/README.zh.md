@@ -12,7 +12,7 @@ Manifest V3 扩展，提供持久侧边栏对话、经审阅的浏览器自动�
 4. 选择 `apps/browser-extension/dist`。
 5. 保持 CurupiraCode 在 `http://127.0.0.1:3080` 运行，然后点击扩展图标。
 
-manifest 的 `key` 固定 id `ndfighammhdpfaejmadojjaaelmpadek`。本地服务器仅通过回环地址接受该 id 的 RPC；其他扩展和普通页面会收到 HTTP 403。
+manifest 的 `key` 固定 id `ndfighammhdpfaejmadojjaaelmpadek`。自基础升级到 DeepSeek Harness 0.2 起，服务器的 `/api` 只接受携带浏览器会话 cookie 的同源请求，因此会以 HTTP 403 拒绝扩展的 `chrome-extension://` 来源。侧边栏可以打开，本地宏的录制和回放也能使用，但在带有可见配对的桥接完成之前，对话、规划和表单回答都会失败。
 
 ## 安全流程
 
@@ -47,4 +47,4 @@ manifest 的 `key` 固定 id `ndfighammhdpfaejmadojjaaelmpadek`。本地服务�
 - 自动化一次处理一个已捕获页面；导航后需要重新捕获和规划。
 - 支持的规划操作为 `click`、`fill`、`select`、`check` 和 `scroll`；表单模式将其缩小为 `fill`、`select` 和 `check`。
 - Firefox 需要独立的 `sidebar_action` manifest，仍属于后续工作。
-- 稳定扩展 id 用于识别已安装来源，但不认证个人，因此桥接保持仅限回环。
+- 扩展仍调用已移除的 0.2 之前的 `/api/<method>` RPC。替代方案需要一个宿主桥接：固定扩展来源，并用用户在已认证的 CurupiraCode 页面上批准的配对令牌认证它；仅凭稳定扩展 id 只能识别已安装来源，不能认证个人。
