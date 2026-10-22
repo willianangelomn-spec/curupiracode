@@ -1,0 +1,31 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write apps/vscode-extension/README.md
+/curupiracode-extension-for-vs-code:
+  en: 69178c3da7edb3d5
+  zh: 615e58b5550af548
+/curupiracode-extension-for-vs-code/build-and-install:
+  en: d91ec8034c0f60c6
+  zh: 44cf2a85b02ac098
+/curupiracode-extension-for-vs-code/use:
+  en: 349024d062e9838c
+  zh: 0eba8005403e6686
+/curupiracode-extension-for-vs-code/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/curupiracode-extension-for-vs-code/model-experience/vs-code-message:
+  en: e7898e74bea226cc
+  zh: aa48e4aefe591669
+/curupiracode-extension-for-vs-code/model-experience/vs-code-message/what-the-model-sees:
+  en: a2129aeaaa22c797
+  zh: 33ee9c8a319e869a
+/curupiracode-extension-for-vs-code/model-experience/vs-code-message/token-effect:
+  en: c75f89c7c1a63fce
+  zh: 8d2cfb2eddd89da0
+/curupiracode-extension-for-vs-code/model-experience/vs-code-message/kv-cache-effect:
+  en: 998ef09fb8ad75da
+  zh: d96304ee1c1e1531
+/curupiracode-extension-for-vs-code/known-limitations-and-deferred-work:
+  en: 395c450c46a6a051
+  zh: 287b95b73b3da719

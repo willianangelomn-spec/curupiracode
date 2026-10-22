@@ -1,0 +1,12 @@
+{
+  "description": "CurupiraCode inside VS Code: chat with the local CurupiraCode agent about the open project, including Gemini 4 Argon through the Antigravity CLI.",
+  "view.chat": "Chat",
+  "command.newConversation": "New conversation",
+  "command.askAboutSelection": "Ask about the selection",
+  "command.stop": "Stop the answer",
+  "command.openFullInterface": "Open the full interface in the browser",
+  "config.model": "Model as `provider/model`, for example `gemini/gemini-4-argon-low` or `deepseek-official/deepseek-v4-flash`.",
+  "config.installPath": "Folder of the built CurupiraCode checkout (`pnpm install && pnpm run build`). Empty: the open folder when it is the checkout, otherwise `~/curupiracode`.",
+  "config.nodePath": "Node.js executable that runs CurupiraCode. Empty: the `node` of your login shell.",
+  "config.webUrl": "Address of the full CurupiraCode interface started with `pnpm curupiracode web`."
+}

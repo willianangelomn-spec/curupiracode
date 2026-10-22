@@ -37,6 +37,8 @@ allowBuilds:
   onnxruntime-node: true
   # Pulled in for image pipelines by Transformers.js; text embeddings do not use it.
   sharp: false
+  # The VS Code extension packager installs signature tooling it does not use to write a .vsix.
+  '@vscode/vsce-sign': false
   # Pulled in by @earendil-works/pi-ai (optional LLM API backend). pnpm lists
   # them only because they ship lifecycle scripts, but those are no-ops we don't
   # need, so we deny them — install still succeeds.

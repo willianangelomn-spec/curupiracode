@@ -1,0 +1,71 @@
+{
+  "name": "curupiracode",
+  "displayName": "CurupiraCode",
+  "description": "%description%",
+  "version": "0.1.0",
+  "publisher": "curupiracode",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/willianangelomn-spec/curupiracode.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["AI", "Chat"],
+  "keywords": ["CurupiraCode", "Gemini", "Argon", "agent", "pt-BR"],
+  "icon": "media/icon.png",
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "curupiracode", "title": "CurupiraCode", "icon": "media/activity.svg" }
+      ]
+    },
+    "views": {
+      "curupiracode": [
+        { "type": "webview", "id": "curupiracode.chat", "name": "%view.chat%" }
+      ]
+    },
+    "commands": [
+      { "command": "curupiracode.newConversation", "title": "%command.newConversation%", "category": "CurupiraCode", "icon": "$(add)" },
+      { "command": "curupiracode.askAboutSelection", "title": "%command.askAboutSelection%", "category": "CurupiraCode" },
+      { "command": "curupiracode.stop", "title": "%command.stop%", "category": "CurupiraCode" },
+      { "command": "curupiracode.openFullInterface", "title": "%command.openFullInterface%", "category": "CurupiraCode", "icon": "$(link-external)" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "curupiracode.newConversation", "when": "view == curupiracode.chat", "group": "navigation@1" },
+        { "command": "curupiracode.openFullInterface", "when": "view == curupiracode.chat", "group": "navigation@2" }
+      ],
+      "editor/context": [
+        { "command": "curupiracode.askAboutSelection", "when": "editorHasSelection", "group": "navigation@100" }
+      ]
+    },
+    "configuration": {
+      "title": "CurupiraCode",
+      "properties": {
+        "curupiracode.model": {
+          "type": "string",
+          "default": "gemini/gemini-4-argon-low",
+          "markdownDescription": "%config.model%"
+        },
+        "curupiracode.installPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.installPath%"
+        },
+        "curupiracode.nodePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.nodePath%"
+        },
+        "curupiracode.webUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:3080",
+          "markdownDescription": "%config.webUrl%"
+        }
+      }
+    }
+  }
+}

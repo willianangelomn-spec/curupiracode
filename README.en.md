@@ -19,6 +19,7 @@ CurupiraCode is a local, open, plugin-first AI agent harness. It is an independe
 - built-in DuckDuckGo search with Bing fallback and Google News, with no additional key;
 - optional SearXNG support through an operator-controlled open-source instance;
 - Chrome and Edge extension with side-panel chat, reviewable automation, assisted forms, and portable macros; the extension's connection to the server still needs a port to dsh 0.2 authenticated access (see [`apps/browser-extension`](apps/browser-extension/README.md));
+- VS Code extension with a CurupiraCode chat in the sidebar, running your local CurupiraCode with any model, Gemini 4 Argon included (see [`apps/vscode-extension`](apps/vscode-extension/README.md));
 - compatibility with `@deepseek-ai/dsh-*` plugins and profiles during the transition;
 - `curupiracode` and `dsh` commands, with `dsh` retained as the legacy alias.
 
@@ -82,6 +83,12 @@ To use Google Gemini, install the Antigravity CLI (`agy` 1.4.3 or later for Gemi
 - Assisted form answering without automatic submission, blocking passwords, authentication codes, cards, and uploads.
 - Portable multi-page macro recording and replay, stored locally and required to stop before final submission.
 - Source code, installation instructions, and the status of the server bridge in `apps/browser-extension`.
+
+**VS Code extension**
+
+- Activity-bar chat view that starts the CurupiraCode checkout on your computer inside the open folder.
+- Model picker with Gemini 4 Argon as the default and an option to send the editor's file or selection with the question.
+- Installed from the `.vsix` that `pnpm --filter @deepseek-ai/dsh-vscode-extension package` writes.
 
 **Web interface (client)**
 

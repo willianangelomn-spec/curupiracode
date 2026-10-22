@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-22-curupiracode-vscode-extension.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-22-curupiracode-vscode-extension.md
+/agent-note-curupiracode-vs-code-extension-over-the-sdk-runtime:
+  en: 543b81b8bc77e4bc
+  zh: a7a9e1cb2caff93c
+/agent-note-curupiracode-vs-code-extension-over-the-sdk-runtime/problem:
+  en: b069614428dad07d
+  zh: a0dc301bd8d8cb46
+/agent-note-curupiracode-vs-code-extension-over-the-sdk-runtime/decision:
+  en: cd98c916f875100e
+  zh: d8aa94481e790011
+/agent-note-curupiracode-vs-code-extension-over-the-sdk-runtime/alternatives-considered:
+  en: 400d7bdfb04ab22e
+  zh: 97636a6dd6984c88
+/agent-note-curupiracode-vs-code-extension-over-the-sdk-runtime/consequences:
+  en: a64aab33b5df93b7
+  zh: b169cc9748bf867c

@@ -19,6 +19,7 @@ CurupiraCode 是一个本地运行、开放且由插件驱动的 AI agent harnes
 - 集成无需额外密钥的 DuckDuckGo 搜索、Bing 回退与 Google News；
 - 可选通过运营者控制的开源 SearXNG 实例进行搜索；
 - 提供 Chrome 与 Edge 扩展，包含侧边栏聊天、可审查自动化、表单辅助填写和可移植宏；扩展与服务器的连接仍需移植到 dsh 0.2 的认证访问（见 [`apps/browser-extension`](apps/browser-extension/README.zh.md)）；
+- 提供 VS Code 扩展，在侧边栏中使用 CurupiraCode 聊天，以任意模型运行本地 CurupiraCode，包括 Gemini 4 Argon（见 [`apps/vscode-extension`](apps/vscode-extension/README.zh.md)）；
 - 过渡期内兼容 `@deepseek-ai/dsh-*` 插件和配置；
 - `curupiracode` 为主命令，`dsh` 为旧版兼容别名。
 
@@ -82,6 +83,12 @@ pnpm curupiracode web --no-open
 - 辅助填写表单但不会自动提交，并阻止密码、验证码、银行卡与文件上传字段。
 - 可跨页面录制和回放可移植宏，数据保存在本机，且必须在最终提交前停止。
 - 源代码、安装说明以及与服务器连接的状态位于 `apps/browser-extension`。
+
+**VS Code 扩展**
+
+- 活动栏中的聊天视图，在打开的文件夹中启动你电脑上的 CurupiraCode 检出。
+- 以 Gemini 4 Argon 为默认值的模型选择器，并可把编辑器中的文件或选区随问题一起发送。
+- 通过 `pnpm --filter @deepseek-ai/dsh-vscode-extension package` 生成的 `.vsix` 安装。
 
 **网页界面（客户端）**
 

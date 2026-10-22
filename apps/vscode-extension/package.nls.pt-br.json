@@ -1,0 +1,12 @@
+{
+  "description": "O CurupiraCode dentro do VS Code: converse com o agente local do CurupiraCode sobre o projeto aberto, inclusive com o Gemini 4 Argon pelo Antigravity CLI.",
+  "view.chat": "Chat",
+  "command.newConversation": "Nova conversa",
+  "command.askAboutSelection": "Perguntar sobre a seleção",
+  "command.stop": "Parar a resposta",
+  "command.openFullInterface": "Abrir a interface completa no navegador",
+  "config.model": "Modelo no formato `provedor/modelo`, por exemplo `gemini/gemini-4-argon-low` ou `deepseek-official/deepseek-v4-flash`.",
+  "config.installPath": "Pasta do CurupiraCode clonado e compilado (`pnpm install && pnpm run build`). Vazio: a pasta aberta, quando for o próprio CurupiraCode; senão `~/curupiracode`.",
+  "config.nodePath": "Executável do Node.js que roda o CurupiraCode. Vazio: o `node` do seu terminal.",
+  "config.webUrl": "Endereço da interface completa do CurupiraCode iniciada com `pnpm curupiracode web`."
+}
