@@ -1,4 +1,4 @@
-import { CurupiraApi, DEFAULT_BASE_URL, normalizeBaseUrl } from './api.js'
+import { CurupiraApi, DEFAULT_BASE_URL, normalizeBaseUrl, normalizePairingToken, pairingPageUrl } from './api.js'
 import {
   actionLabel,
   buildChatPrompt,
@@ -13,6 +13,7 @@ import { macroStats, validateMacro } from './macro.js'
 const ui = Object.fromEntries([
   'connection', 'page-title', 'page-url', 'capture', 'task', 'plan', 'cancel', 'result', 'summary', 'actions',
   'risk-confirmation', 'allow-risk', 'execute', 'status', 'base-url', 'save-url', 'answer-form', 'review-help',
+  'settings', 'pairing-token', 'pair-extension',
   'chat-tab', 'automation-tab', 'chat-view', 'automation-view', 'include-page', 'new-chat', 'chat-messages',
   'chat-form', 'chat-input', 'chat-context-label', 'chat-cancel', 'chat-send', 'chat-attach', 'chat-files', 'chat-attachments',
   'macro-name', 'macro-start', 'macro-finish', 'macro-cancel-recording', 'macro-recording-status', 'macro-select', 'macro-summary',
@@ -595,7 +596,7 @@ async function planTask() {
     const response = await api.plan(buildPlannerPrompt(task, current), current.title || 'Página', abortController.signal)
     const parsed = parsePlan(response.text)
     renderPlan(validatePlan(parsed, current.elements))
-    setStatus(`Plano pronto e registrado na conversa ${response.sessionId.slice(0, 8)}. Revise antes de executar.`, 'success')
+    setStatus(`Plano pronto e registrado na conversa ${response.sessionId.slice(-8)}. Revise antes de executar.`, 'success')
   } finally {
     abortController = undefined
     setBusy(false)
@@ -656,10 +657,15 @@ async function restoreChat() {
   }
   try {
     renderChatMessages(await api.history(chatSessionId))
-  } catch {
+  } catch (error) {
+    renderChatMessages([])
+    // A Session that no longer exists or no longer runs a browser preset is forgotten; other failures keep it for the next connection.
+    if (error?.status !== 403 && error?.status !== 404) {
+      setStatus(`Não foi possível restaurar a conversa: ${error instanceof Error ? error.message : String(error)}`, 'error')
+      return
+    }
     chatSessionId = undefined
     await chrome.storage.local.remove('chatSessionId')
-    renderChatMessages([])
   }
 }
 
@@ -723,10 +729,11 @@ async function newChat() {
 }
 
 async function connect() {
-  const stored = await chrome.storage.local.get('baseUrl')
+  const stored = await chrome.storage.local.get(['baseUrl', 'pairingToken'])
   const baseUrl = stored.baseUrl || DEFAULT_BASE_URL
   ui['base-url'].value = baseUrl
-  api = new CurupiraApi(baseUrl)
+  ui['pairing-token'].value = stored.pairingToken || ''
+  api = new CurupiraApi(baseUrl, stored.pairingToken)
   try {
     await api.ping()
     ui.connection.className = 'connection online'
@@ -734,7 +741,12 @@ async function connect() {
     await Promise.all([restoreChat(), restoreMacros()])
   } catch (error) {
     ui.connection.className = 'connection offline'
-    setStatus(`CurupiraCode local indisponível: ${error instanceof Error ? error.message : String(error)}`, 'error')
+    if (error?.status === 401 || error?.status === 403) {
+      ui.settings.open = true
+      setStatus(error.message, 'error')
+    } else {
+      setStatus(`CurupiraCode local indisponível: ${error instanceof Error ? error.message : String(error)}`, 'error')
+    }
     await restoreMacros().catch(() => undefined)
   }
 }
@@ -782,9 +794,25 @@ ui.cancel.addEventListener('click', () => abortController?.abort(new DOMExceptio
 ui.execute.addEventListener('click', () => void executePlan().catch(error => setStatus(error.message, 'error')))
 ui['save-url'].addEventListener('click', () => void (async () => {
   try {
-    const value = normalizeBaseUrl(ui['base-url'].value)
-    await chrome.storage.local.set({ baseUrl: value })
+    const baseUrl = normalizeBaseUrl(ui['base-url'].value)
+    const token = ui['pairing-token'].value.trim()
+    if (token === '') {
+      await chrome.storage.local.set({ baseUrl })
+      await chrome.storage.local.remove('pairingToken')
+    } else {
+      await chrome.storage.local.set({ baseUrl, pairingToken: normalizePairingToken(token) })
+    }
     await connect()
+  } catch (error) {
+    setStatus(error.message, 'error')
+  }
+})())
+ui['pair-extension'].addEventListener('click', () => void (async () => {
+  try {
+    // A tab the extension creates carries no extension initiator, so CurupiraCode
+    // receives an ordinary same-site navigation with its SameSite=Strict cookie.
+    await chrome.tabs.create({ url: pairingPageUrl(ui['base-url'].value) })
+    setStatus('Aprove a extensão na aba aberta, copie o código e cole em «Código de pareamento».')
   } catch (error) {
     setStatus(error.message, 'error')
   }

@@ -18,7 +18,7 @@ CurupiraCode 是一个本地运行、开放且由插件驱动的 AI agent harnes
 - 通过 Antigravity CLI 使用 Google Gemini 4 Argon 及其他 Gemini 模型，无需 API key；
 - 集成无需额外密钥的 DuckDuckGo 搜索、Bing 回退与 Google News；
 - 可选通过运营者控制的开源 SearXNG 实例进行搜索；
-- 提供 Chrome 与 Edge 扩展，包含侧边栏聊天、可审查自动化、表单辅助填写和可移植宏；扩展与服务器的连接仍需移植到 dsh 0.2 的认证访问（见 [`apps/browser-extension`](apps/browser-extension/README.zh.md)）；
+- 提供 Chrome 与 Edge 扩展，包含侧边栏聊天、可审查自动化、表单辅助填写和可移植宏，并通过可见的代码配对连接本地服务器（见 [`apps/browser-extension`](apps/browser-extension/README.zh.md)）；
 - 过渡期内兼容 `@deepseek-ai/dsh-*` 插件和配置；
 - `curupiracode` 为主命令，`dsh` 为旧版兼容别名。
 
@@ -81,7 +81,8 @@ pnpm curupiracode web --no-open
 - 自动化计划经过校验并提供可编辑预览；浏览器只执行用户批准的操作。
 - 辅助填写表单但不会自动提交，并阻止密码、验证码、银行卡与文件上传字段。
 - 可跨页面录制和回放可移植宏，数据保存在本机，且必须在最终提交前停止。
-- 源代码、安装说明以及与服务器连接的状态位于 `apps/browser-extension`。
+- 配对在已认证的 CurupiraCode 页面上批准；该代码只能访问不含工具的浏览器对话，并可随时撤销。
+- 源代码以及安装与配对说明位于 `apps/browser-extension`。
 
 **网页界面（客户端）**
 

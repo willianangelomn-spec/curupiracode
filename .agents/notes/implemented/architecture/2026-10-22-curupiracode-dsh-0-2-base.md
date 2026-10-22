@@ -16,12 +16,13 @@ The fork tracks upstream as one squash of the upstream tag `dsh-v0.2.1-rc.2` ove
 - `@deepseek-ai/dsh-client-ui-language-pt-br` follows the `locale` row. It adds `pt-BR` with English fallback and registers one dictionary per namespace. Each dictionary `satisfies` its namespace's typed key set, so an upstream key that is added, renamed, or removed fails the client typecheck until the pack follows.
 - The `browser` and `browser-chat` presets are preset patch files of the Web bundle, and the `knowledge-tools` row sits in the `standard`, `ptc`, and `cordis` presets, so the tool-free browser presets cannot read the vault.
 - `@deepseek-ai/dsh-llm-gemini` uses the 0.2 LLM contract: tool-role messages become `functionResponse` parts, images that exceed the request budget fail with `IMAGE_OFFLOAD_REQUIRED`, and the catalog starts with Gemini 4 Argon. Its `models` field is volatile and its directory entry reports keyless native authentication, so **Settings → Models** lists Google Gemini without a key field.
+- `@deepseek-ai/dsh-host-extension-bridge` gives the browser extension its own `/extension-bridge` routes instead of an exception inside Connection. A signed-in browser pairs the extension origin on its page, and the paired origin reaches a fixed endpoint set over the `browser` and `browser-chat` presets; the [browser extension note](../feature/2026-08-31-curupiracode-browser-extension.md) records its design.
 - The knowledge, DuckDuckGo search, SearXNG search, and Cyberpunk theme packages follow the 0.2 package conventions: no invariant companions, explicit Typert parameter annotations, and the current client package layout.
 
 ### Withdrawn features
 
 - Permanent session deletion, decided in the [semantic memory note](../feature/2026-08-30-curupira-semantic-memory-and-session-deletion.md), is withdrawn. It was an edit to the session controller, and the 0.2 controller is a Typert Remote whose session lifecycle and Remote access rules belong upstream. Archive is the only removal action.
-- The `trustedExtensionIds` CORS bridge of the [browser extension note](../feature/2026-08-31-curupiracode-browser-extension.md) is withdrawn. The 0.2 connection admits `/api` only for same-origin requests with the browser cookie or a Peer credential, so the extension's requests receive HTTP 403. Its replacement is a Host bridge with visible token pairing, tracked in the roadmap's browser milestone.
+- The `trustedExtensionIds` CORS exception of the [browser extension note](../feature/2026-08-31-curupiracode-browser-extension.md) is withdrawn. The 0.2 connection admits `/api` only for same-origin requests with the browser cookie or a Peer credential, and that fence stays as upstream ships it; the extension bridge above replaces the exception with visible token pairing.
 - The Gemini sign-in card on the Models page is withdrawn because the 0.2 page has no surface for adapter-owned authorization flows. Users sign in by running `agy` in a terminal; the Google OAuth flow stays registered on the authorization seam for the Code Assist fallback.
 
 ## Alternatives considered
@@ -30,8 +31,8 @@ The fork tracks upstream as one squash of the upstream tag `dsh-v0.2.1-rc.2` ove
 
 **Merge upstream with its full history.** Rejected because the CurupiraCode history starts from a snapshot without upstream ancestry. A true merge would import thousands of upstream commits into a repository that never contained them; a squash from the recorded upstream tag keeps the fork's history linear and the next sync repeatable.
 
-**Port the extension through a generic proxy of every owner Remote.** Rejected because it would give an extension origin owner-equivalent access without a pairing step a person approves. The bridge deserves its own design and review.
+**Port the extension through a generic proxy of every owner Remote.** Rejected because it would give an extension origin owner-equivalent access without a pairing step a person approves. The extension bridge exposes a fixed endpoint set behind a pairing a person approves instead.
 
 ## Consequences
 
-Upstream syncs now touch CurupiraCode at bundle rows, preset files, and package conventions instead of inside upstream components. The pt-BR pack must be updated whenever upstream changes a translated namespace, and the typecheck reports exactly which keys moved. Users lose permanent session deletion and the extension's server connection until the paired bridge exists; the root README and the extension README state that gap. Gemini users sign in outside the Web interface.
+Upstream syncs now touch CurupiraCode at bundle rows, preset files, and package conventions instead of inside upstream components. The pt-BR pack must be updated whenever upstream changes a translated namespace, and the typecheck reports exactly which keys moved. Users lose permanent session deletion. The extension keeps its server connection through the paired bridge, at the cost of one approval step per browser profile. Gemini users sign in outside the Web interface.

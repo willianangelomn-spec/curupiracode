@@ -104,10 +104,14 @@
 
       <p id="status" class="status" role="status"></p>
 
-      <details class="settings">
+      <details id="settings" class="settings">
         <summary>Conexão local</summary>
         <label for="base-url">Endereço do CurupiraCode</label>
-        <div class="url-row"><input id="base-url" type="url" value="http://127.0.0.1:3080"><button id="save-url" type="button">Salvar</button></div>
+        <div class="url-row"><input id="base-url" type="url" value="http://127.0.0.1:3080"></div>
+        <label for="pairing-token">Código de pareamento</label>
+        <div class="url-row"><input id="pairing-token" type="password" autocomplete="off" spellcheck="false" placeholder="Cole o código gerado ao parear"><button id="pair-extension" type="button">Parear</button></div>
+        <p class="settings-help">“Parear” abre o CurupiraCode em uma aba. Aprove a extensão, copie o código mostrado e cole aqui.</p>
+        <button id="save-url" class="settings-save" type="button">Salvar</button>
       </details>
     </main>
 

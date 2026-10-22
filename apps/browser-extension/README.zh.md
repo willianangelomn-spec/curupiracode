@@ -10,9 +10,12 @@ Manifest V3 扩展，提供持久侧边栏对话、经审阅的浏览器自动�
 2. 打开 `chrome://extensions` 或 `edge://extensions`。
 3. 启用开发者模式并选择 **加载已解压的扩展程序**。
 4. 选择 `apps/browser-extension/dist`。
-5. 保持 CurupiraCode 在 `http://127.0.0.1:3080` 运行，然后点击扩展图标。
+5. 用 `pnpm curupiracode web` 启动 CurupiraCode，并在同一浏览器中打开一次打印出的 `?token=` 地址，使其处于已登录状态。
+6. 点击扩展图标，打开 **Conexão local**，检查地址（默认 `http://127.0.0.1:3080`）。
+7. 点击 **Parear**。一个标签页会打开 CurupiraCode 配对页面；点击 **Aprovar e gerar código** 并复制显示的代码。
+8. 把代码粘贴到 **Código de pareamento**，然后点击 **Salvar**。指示灯变为绿色。
 
-manifest 的 `key` 固定 id `ndfighammhdpfaejmadojjaaelmpadek`。自基础升级到 DeepSeek Harness 0.2 起，服务器的 `/api` 只接受携带浏览器会话 cookie 的同源请求，因此会以 HTTP 403 拒绝扩展的 `chrome-extension://` 来源。侧边栏可以打开，本地宏的录制和回放也能使用，但在带有可见配对的桥接完成之前，对话、规划和表单回答都会失败。
+manifest 的 `key` 固定 id `ndfighammhdpfaejmadojjaaelmpadek`，Web bundle 的[扩展桥接](../../packages/host/extension-bridge/README.zh.md)只接纳这个来源；`pnpm --filter @deepseek-ai/dsh-browser-extension verify` 会同时检查两者。面板把配对代码作为 bearer 令牌发送给桥接的固定端点，这些端点只驱动不含工具的 `browser` 和 `browser-chat` preset。再次批准会替换代码，配对页面上的 **Revogar** 会立即使其失效；随后面板会要求重新配对。本地宏的录制和回放不需要配对。
 
 ## 安全流程
 
@@ -47,4 +50,5 @@ manifest 的 `key` 固定 id `ndfighammhdpfaejmadojjaaelmpadek`。自基础升�
 - 自动化一次处理一个已捕获页面；导航后需要重新捕获和规划。
 - 支持的规划操作为 `click`、`fill`、`select`、`check` 和 `scroll`；表单模式将其缩小为 `fill`、`select` 和 `check`。
 - Firefox 需要独立的 `sidebar_action` manifest，仍属于后续工作。
-- 扩展仍调用已移除的 0.2 之前的 `/api/<method>` RPC。替代方案需要一个宿主桥接：固定扩展来源，并用用户在已认证的 CurupiraCode 页面上批准的配对令牌认证它；仅凭稳定扩展 id 只能识别已安装来源，不能认证个人。
+- 回复在回合结束后才到达：面板大约每秒轮询一次桥接，三分钟后放弃。
+- 配对代码保存在 `chrome.storage.local` 中，直到用户清除或服务器撤销；能访问该浏览器配置文件的任何人都能读取它。

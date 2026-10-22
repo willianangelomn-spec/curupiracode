@@ -10,9 +10,12 @@ Manifest V3 extension with persistent side-panel chat, reviewed browser automati
 2. Open `chrome://extensions` or `edge://extensions`.
 3. Enable developer mode and choose **Load unpacked**.
 4. Select `apps/browser-extension/dist`.
-5. Keep CurupiraCode running at `http://127.0.0.1:3080` and click the extension icon.
+5. Start CurupiraCode with `pnpm curupiracode web` and open the printed `?token=` address once in the same browser, so it is signed in.
+6. Click the extension icon, open **Conexão local**, and check the address (default `http://127.0.0.1:3080`).
+7. Click **Parear**. A tab opens the CurupiraCode pairing page; click **Aprovar e gerar código** and copy the code it shows.
+8. Paste the code into **Código de pareamento** and click **Salvar**. The indicator turns green.
 
-The manifest `key` fixes the id `ndfighammhdpfaejmadojjaaelmpadek`. Since the DeepSeek Harness 0.2 base, the server's `/api` admits only same-origin requests that carry the browser session cookie, so it refuses the extension's `chrome-extension://` origin with HTTP 403. The side panel opens and local macro recording and replay work, but conversation, planning, and form answering fail until a bridge with visible pairing lands.
+The manifest `key` fixes the id `ndfighammhdpfaejmadojjaaelmpadek`, and the Web bundle's [extension bridge](../../packages/host/extension-bridge/README.md) admits exactly that origin; `pnpm --filter @deepseek-ai/dsh-browser-extension verify` checks both. The panel sends the pairing code as a bearer token to the bridge's fixed endpoints, which drive only the tool-free `browser` and `browser-chat` presets. Approving again replaces the code, and **Revogar** on the pairing page stops it immediately; the panel then asks for a new pairing. Local macro recording and replay need no pairing.
 
 ## Security flow
 
@@ -47,4 +50,5 @@ Each fresh page snapshot can change the request after the stable restricted pres
 - Automation handles one captured page at a time; navigation requires a new capture and plan.
 - Supported planned actions are `click`, `fill`, `select`, `check`, and `scroll`; form mode narrows this to `fill`, `select`, and `check`.
 - Firefox requires a separate `sidebar_action` manifest and remains future work.
-- The extension still calls the removed pre-0.2 `/api/<method>` RPC. The replacement needs a Host bridge that pins the extension origin and authenticates it with a pairing token the user approves from an authenticated CurupiraCode page; the stable extension id alone identifies an installed origin but does not authenticate a person.
+- Replies arrive after the turn ends: the panel polls the bridge about once a second and gives up after three minutes.
+- The pairing code stays in `chrome.storage.local` until the user clears it or the server revokes it; anyone with access to the browser profile can read it.

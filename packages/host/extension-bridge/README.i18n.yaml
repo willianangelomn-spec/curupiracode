@@ -1,0 +1,61 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/host/extension-bridge/README.md
+/:
+  en: 04b424cb01eb23bf
+  zh: 6cd15f9fc279e022
+/deepseek-ai-dsh-host-extension-bridge:
+  en: 7180cc51190013d3
+  zh: 8aeda810d31e6d39
+/deepseek-ai-dsh-host-extension-bridge/summary:
+  en: 27ec28c915f410a7
+  zh: 8a50604830ec63f6
+/deepseek-ai-dsh-host-extension-bridge/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-host-extension-bridge/use-this-package:
+  en: bb8230670bf56339
+  zh: 179de8c1dae02d57
+/deepseek-ai-dsh-host-extension-bridge/use-this-package/configuration:
+  en: cbe928642c022be1
+  zh: a72b8971d88d85fc
+/deepseek-ai-dsh-host-extension-bridge/use-this-package/pairing:
+  en: ef0728b250dbb829
+  zh: 6a0e525e28effeeb
+/deepseek-ai-dsh-host-extension-bridge/use-this-package/endpoints:
+  en: ea9587b0f7c1fe72
+  zh: 0a97485d50494e50
+/deepseek-ai-dsh-host-extension-bridge/use-this-package/refusals:
+  en: a21f4308d7d80ddb
+  zh: 8526c07fa613c31e
+/deepseek-ai-dsh-host-extension-bridge/understand-the-implementation:
+  en: 42b15ac6321706aa
+  zh: 4ed0861911abaf5d
+/deepseek-ai-dsh-host-extension-bridge/understand-the-implementation/pairing-records:
+  en: a39b83284080aa3a
+  zh: 1da241b38c44825f
+/deepseek-ai-dsh-host-extension-bridge/understand-the-implementation/session-work:
+  en: 0d7ec785e7e5d2cd
+  zh: a6fa7f0d58b555fe
+/deepseek-ai-dsh-host-extension-bridge/understand-the-implementation/lifecycle:
+  en: 24455367ae71f0e3
+  zh: 517a70cbf6f8cbf6
+/deepseek-ai-dsh-host-extension-bridge/understand-the-implementation/source-map:
+  en: 10882fd00b464179
+  zh: 266b4877b810a27c
+/deepseek-ai-dsh-host-extension-bridge/further-exploration:
+  en: 6231f2de0b1e3094
+  zh: 9d6a9acd26d20c17
+/deepseek-ai-dsh-host-extension-bridge/model-experience:
+  en: 49ea22b0eac634d8
+  zh: a514cd318848bcda
+/deepseek-ai-dsh-host-extension-bridge/model-experience/kv-cache-effect:
+  en: 6a964ff7bc6f53ae
+  zh: d8749e3e3270ee6c
+/deepseek-ai-dsh-host-extension-bridge/known-limitations-and-deferred-work:
+  en: ea69c075c4345556
+  zh: d42c2d371fe4ab6c
+/deepseek-ai-dsh-host-extension-bridge/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

@@ -97,10 +97,11 @@ código aberto, backend selecionável e controle local.
 
 Estado atual: **primeiro protótipo funcional para Chrome e Edge**. A extensão Manifest V3 oferece conversa
 persistente com contexto opcional da página e um modo separado de automação. Ambos usam presets sem ferramentas
-de sistema; somente a automação produz um plano JSON, mostra a prévia e executa ações aprovadas. Desde a base DeepSeek
-Harness 0.2, o servidor só aceita a interface autenticada por cookie, e a ponte antiga por ID estável deixou de
-funcionar: a próxima entrega deste marco é uma ponte no host com pareamento visível por token. Streaming, a
-variante Firefox e a publicação nas lojas também permanecem neste marco.
+de sistema; somente a automação produz um plano JSON, mostra a prévia e executa ações aprovadas. Na base DeepSeek
+Harness 0.2, a extensão fala com o servidor por uma ponte no host com pareamento visível: o usuário aprova a
+extensão numa página autenticada do CurupiraCode, cola o código no painel e pode revogá-lo a qualquer momento; o
+código só alcança conversas com os presets sem ferramentas. Streaming, a variante Firefox e a publicação nas lojas
+permanecem neste marco.
 
 ### Primeira versão
 
@@ -116,8 +117,7 @@ variante Firefox e a publicação nas lojas também permanecem neste marco.
 - [x] conversar, resumir e explicar com histórico restaurado diretamente no painel;
 - [ ] comparar abas e extrair para tabela com resultados persistentes no painel;
 - [ ] citações que retornam à página e ao trecho de origem;
-- [ ] conexão autenticada com token e pareamento visível, portada para a API tipada do dsh 0.2; até lá,
-  conversa, planejamento e respostas de formulário da extensão recebem HTTP 403;
+- [x] conexão autenticada com token e pareamento visível, portada para a API tipada do dsh 0.2;
 - [x] `activeTab` sem `<all_urls>`; a extensão solicita somente acesso HTTP a `127.0.0.1` e `localhost`.
 
 ### Ponte local

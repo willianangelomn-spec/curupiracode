@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Browser extension bridge",
+    "description": "Pairs the CurupiraCode browser extension with a visible token and serves its fixed chat, planning, and document endpoints."
+  }
+}

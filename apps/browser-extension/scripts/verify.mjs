@@ -10,6 +10,9 @@ const der = createPublicKey({ key: Buffer.from(manifest.key, 'base64'), type: 's
 const id = [...createHash('sha256').update(der).digest().subarray(0, 16)]
   .map(byte => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 15))}`).join('')
 if (id !== 'ndfighammhdpfaejmadojjaaelmpadek') throw new Error(`unexpected extension id ${id}`)
+// The Web bundle's extension-bridge row admits exactly this origin.
+const bundlePatch = await readFile(join(root, '../../packages/bundle/web-app/cordis.patch.yml'), 'utf8')
+if (!bundlePatch.includes(`- chrome-extension://${id}\n`)) throw new Error(`the web-app extension-bridge row does not allow chrome-extension://${id}`)
 for (const permission of manifest.host_permissions) {
   if (!/^http:\/\/(127\.0\.0\.1|localhost)\/\*$/.test(permission)) throw new Error(`non-loopback host permission ${permission}`)
 }

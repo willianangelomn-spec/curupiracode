@@ -152,6 +152,8 @@ async function bootWeb(
     // The open-in-app host routes wait for the webserver and connection
     // rows disabled above (connection's trust fence guards every route).
     { id: 'open-in-app', disabled: true },
+    // The extension bridge's routes also wait for the webserver and connection rows.
+    { id: 'extension-bridge', disabled: true },
     // The always-on reload chain waits for the browser roster and bound port
     // disabled above.
     { id: 'client-hmr', disabled: true },

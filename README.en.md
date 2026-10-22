@@ -18,7 +18,7 @@ CurupiraCode is a local, open, plugin-first AI agent harness. It is an independe
 - Google Gemini 4 Argon and the other Gemini models through the Antigravity CLI, with no API key;
 - built-in DuckDuckGo search with Bing fallback and Google News, with no additional key;
 - optional SearXNG support through an operator-controlled open-source instance;
-- Chrome and Edge extension with side-panel chat, reviewable automation, assisted forms, and portable macros; the extension's connection to the server still needs a port to dsh 0.2 authenticated access (see [`apps/browser-extension`](apps/browser-extension/README.md));
+- Chrome and Edge extension with side-panel chat, reviewable automation, assisted forms, and portable macros, connected to the local server through visible code pairing (see [`apps/browser-extension`](apps/browser-extension/README.md));
 - compatibility with `@deepseek-ai/dsh-*` plugins and profiles during the transition;
 - `curupiracode` and `dsh` commands, with `dsh` retained as the legacy alias.
 
@@ -81,7 +81,8 @@ To use Google Gemini, install the Antigravity CLI (`agy` 1.4.3 or later for Gemi
 - Automation with a validated plan and editable preview: only user-approved actions run in the browser.
 - Assisted form answering without automatic submission, blocking passwords, authentication codes, cards, and uploads.
 - Portable multi-page macro recording and replay, stored locally and required to stop before final submission.
-- Source code, installation instructions, and the status of the server bridge in `apps/browser-extension`.
+- Pairing approved on an authenticated CurupiraCode page; the code reaches only the tool-free browser conversations and can be revoked at any time.
+- Source code and installation and pairing instructions in `apps/browser-extension`.
 
 **Web interface (client)**
 

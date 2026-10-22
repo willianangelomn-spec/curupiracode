@@ -88,6 +88,20 @@
     - id: ui-open-in-app
       name: '@deepseek-ai/dsh-client-ui-open-in-app'
 
+    # CurupiraCode browser extension bridge: the signed-in browser approves
+    # the extension on /extension-bridge/pair, and only that origin with its
+    # issued token reaches the fixed chat, planning, and document endpoints,
+    # restricted to the tool-free browser presets. The origin is the id the
+    # extension's manifest key derives (apps/browser-extension verify).
+    - id: extension-bridge
+      name: '@deepseek-ai/dsh-host-extension-bridge'
+      config:
+        allowedOrigins:
+          - chrome-extension://ndfighammhdpfaejmadojjaaelmpadek
+        agentPresets:
+          - browser
+          - browser-chat
+
     - id: workspace
       name: '@deepseek-ai/dsh-workspace'
 
