@@ -1,12 +1,14 @@
 /**
  * Configuration schema for the Gemini adapter. The route is fixed (`gemini`);
  * configuration owns image request bounds, the provider request retry policy,
- * and extra model ids the local Antigravity CLI accepts. The CLI and the
+ * and extra model ids the local Antigravity CLI accepts. `models` is volatile,
+ * so the Models page can edit it and the catalog follows without a remount. The CLI and the
  * credential plane own the Google sign-in, so nothing secret lives here.
  *
  * @module dsh-llm-gemini/config
  */
 
+import type { Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { RetryPolicySchema } from '@deepseek-ai/dsh-llm'
 import type { ModelModality, RetryPolicyConfig } from '@deepseek-ai/dsh-llm'
@@ -46,12 +48,12 @@ export interface Config {
   maxRequestImageBytes: number
   /** Provider-owned model-request retry policy; omission uses normal mode with five retries. */
   retryPolicy: RetryPolicyConfig | null
-  /** Models added to (or replacing entries of) the shipped catalog. */
-  models: GeminiModelConfig[]
+  /** Models added to (or replacing entries of) the shipped catalog; edits apply without a remount. */
+  models: Volatile<GeminiModelConfig[]>
 }
 
 /** Runtime schema for {@link Config}. */
-export const Config: z<Config> = z.object({
+export const Config = z.object({
   requestImagePixelBudget: z.number().step(1).min(1).default(DEFAULT_REQUEST_IMAGE_PIXEL_BUDGET),
   requestImageMaxBytes: z.number().step(1).min(1).default(DEFAULT_REQUEST_IMAGE_MAX_BYTES),
   maxRequestImageBytes: z.number().step(1).min(1).default(DEFAULT_MAX_REQUEST_IMAGE_BYTES),
@@ -61,7 +63,7 @@ export const Config: z<Config> = z.object({
     name: z.string(),
     contextWindow: z.number().step(1).min(1),
     images: z.boolean(),
-  })).default([]),
+  })).default([]).volatile(),
 })
 
 /**

@@ -33,8 +33,8 @@ describe('Brazilian Portuguese language pack', () => {
     expect(locale.getLocale().active).toBe(PT_BR_LOCALE)
     const t = locale.bind('common')
     expect(t('retry')).toBe(PT_BR_DICTIONARIES['common']?.['retry'])
-    // A key the pack does not carry falls back to English.
-    expect(t('onlyEn')).toBe('English only')
+    // A key the pack does not carry falls back to English; the typed key map omits this test-only key.
+    expect(locale.bind('common' as string)('onlyEn')).toBe('English only')
     await fiber.dispose()
   })
 

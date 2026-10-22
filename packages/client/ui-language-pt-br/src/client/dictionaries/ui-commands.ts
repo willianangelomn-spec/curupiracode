@@ -1,8 +1,8 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-commands`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-commands/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-commands/src/client/index.ts'
 
 /** `command` namespace, complete against its owning key set. */
 export const commandPtBr = {

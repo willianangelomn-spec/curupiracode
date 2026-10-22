@@ -1,16 +1,16 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-open-in-app`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-open-in-app/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-open-in-app/src/client/index.ts'
 
 /** `open-in-app` namespace, complete against its owning key set. */
 export const openInAppPtBr = {
   'open.title': 'Abrir em {app}',
   'path.appDefault': '{app} (padrão)',
   'path.appsError': 'Não foi possível carregar os aplicativos',
-  'shortcut.busy': 'Abrindo workspace',
-  'shortcut.unavailable': 'Workspace atual ou aplicativo local indisponível',
+  'shortcut.busy': 'Abrindo trabalho',
+  'shortcut.unavailable': 'Trabalho atual ou aplicativo local indisponível',
   'open.tooltip': 'Abrir localmente',
   'path.open': 'Abrir',
   'path.more': 'Mais formas de abrir',
@@ -21,4 +21,34 @@ export const openInAppPtBr = {
   'app.explorer': 'Explorador de Arquivos',
   'app.filemanager': 'Arquivos',
   'app.terminal': 'Terminal',
+  'app.cursor': 'Cursor',
+  'app.vscode': 'VS Code',
+  'app.vscodeinsiders': 'VS Code Insiders',
+  'app.windsurf': 'Windsurf',
+  'app.zed': 'Zed',
+  'app.sublimetext': 'Sublime Text',
+  'app.xcode': 'Xcode',
+  'app.androidstudio': 'Android Studio',
+  'app.intellij': 'IntelliJ IDEA',
+  'app.pycharm': 'PyCharm',
+  'app.webstorm': 'WebStorm',
+  'app.phpstorm': 'PhpStorm',
+  'app.goland': 'GoLand',
+  'app.rider': 'Rider',
+  'app.rustrover': 'RustRover',
+  'app.fork': 'Fork',
+  'app.sourcetree': 'Sourcetree',
+  'app.github': 'GitHub Desktop',
+  'app.tower': 'Tower',
+  'app.gitkraken': 'GitKraken',
+  'app.smartgit': 'SmartGit',
+  'app.sublimemerge': 'Sublime Merge',
+  'app.ghostty': 'Ghostty',
+  'app.warp': 'Warp',
+  'app.iterm': 'iTerm2',
+  'app.kitty': 'kitty',
+  'app.windowsterminal': 'Terminal do Windows',
+  'app.gitbash': 'Git Bash',
+  'app.gnometerminal': 'Terminal do GNOME',
+  'app.konsole': 'Konsole',
 } satisfies LocaleDictOf<'open-in-app'>

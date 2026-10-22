@@ -1,8 +1,8 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-model-selection`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-model-selection/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-model-selection/src/client/index.ts'
 
 /** `model` namespace, complete against its owning key set. */
 export const modelPtBr = {

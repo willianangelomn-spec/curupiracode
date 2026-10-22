@@ -1,8 +1,8 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-session-log-export`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-session-log-export/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-session-log-export/src/client/index.ts'
 
 /** `session-log-download` namespace, complete against its owning key set. */
 export const sessionLogDownloadPtBr = {

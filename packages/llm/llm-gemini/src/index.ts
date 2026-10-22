@@ -56,7 +56,7 @@ const NS = 'llm-gemini'
 export function apply(ctx: Context, config: Config): void {
   const settingsNs = ctx.fiber.entry?.options.id ?? NS
   const retryPolicy = resolveRetryPolicy(config.retryPolicy ?? undefined, 'llm-gemini retryPolicy')
-  const models = mergeModels(configuredModels(config.models))
+  const models = () => mergeModels(configuredModels(config.models.get()))
   const adapter = new GeminiAdapter({
     ctx,
     retryPolicy,
@@ -75,19 +75,22 @@ export function apply(ctx: Context, config: Config): void {
   // One adapter instance owns the single `gemini` route.
   ctx.llm.registerAdapter([PROVIDER], adapter)
 
-  // Configurable-provider directory entry so the Models page can show and edit it.
+  // Configurable-provider directory entry so the Models page can show and edit
+  // it. The route reads no API key: the Antigravity CLI or a stored Google
+  // sign-in authenticates it, so the page offers no key field.
   const directoryEntry: LlmConfigurableProvider = {
     provider: PROVIDER,
     displayName: PROVIDER_NAME,
     settingsNs,
     settingsPath: [],
     declared: false,
+    nativeAuth: { env: [], oauth: true },
   }
   ctx.llm.registerConfigurableProviders([directoryEntry])
 
   // Interrogate the Gemini endpoint for its models (the curated catalog here).
   ctx.llm.registerModelDiscovery(settingsNs, (): Promise<readonly LlmDiscoveredModel[]> => Promise.resolve(
-    models.map(model => ({
+    models().map(model => ({
       id: model.id,
       name: model.name,
       contextWindow: model.contextWindow,

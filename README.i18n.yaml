@@ -2,5 +2,33 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
-README.md: 15cec4ab885ddcf2fa5565137350bfaf6ba9867c
-README.zh.md: 9de11d96e1970a50955d5872be4e53e9ae32bcdd
+/:
+  en: 77aa4b7b1ff375ad
+  zh: 8c5724d0465692ad
+/curupiracode:
+  en: e3fdecdcb20e6430
+  zh: 15b8d68202408b88
+/curupiracode/estado-atual:
+  en: 734946ae802f4ef9
+  zh: 9f8c04cf1c985210
+/curupiracode/rodando-deste-checkout:
+  en: 62f4652056b9ac78
+  zh: 38e78d5e28c0a6fa
+/curupiracode/o-que-tem-dentro:
+  en: 3a05558e10cb3508
+  zh: a7cfa6b32cd5d1a0
+/curupiracode/dire-o-do-projeto:
+  en: ce2c9bc109318ed9
+  zh: eeb544845c69452d
+/curupiracode/compatibilidade-e-origem:
+  en: aaf6021f43da2f36
+  zh: 0bc178693e9c2094
+/curupiracode/contribuir:
+  en: 68e3c70961998540
+  zh: 696410de23e523ee
+/curupiracode/cita-o:
+  en: 236c4ee10fa7ce54
+  zh: 2254b3f914ac0f03
+/curupiracode/licen-a:
+  en: d3c24616a8383991
+  zh: ff42d2fc354c5513

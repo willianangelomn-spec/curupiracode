@@ -12,11 +12,13 @@ CurupiraCode is a local, open, plugin-first AI agent harness. It is an independe
 
 ## Current state
 
-- Web interface with the CurupiraCode identity and local theme;
-- Brazilian Portuguese as the primary product experience;
+- base synchronized with DeepSeek Harness 0.2 (`dsh-v0.2.1-rc.2`): typed API between interface and server, token-protected interface access, right sidebar, automatic tasks, and plugin manager;
+- CurupiraCode identity as a brand plugin, with the forest-green palette applied over any theme;
+- Brazilian Portuguese as a language pack, selected automatically in Portuguese-language browsers;
+- Google Gemini 4 Argon and the other Gemini models through the Antigravity CLI, with no API key;
 - built-in DuckDuckGo search with Bing fallback and Google News, with no additional key;
 - optional SearXNG support through an operator-controlled open-source instance;
-- Chrome and Edge extension with side-panel chat, reviewable automation, assisted forms, and portable macros;
+- Chrome and Edge extension with side-panel chat, reviewable automation, assisted forms, and portable macros; the extension's connection to the server still needs a port to dsh 0.2 authenticated access (see [`apps/browser-extension`](apps/browser-extension/README.md));
 - compatibility with `@deepseek-ai/dsh-*` plugins and profiles during the transition;
 - `curupiracode` and `dsh` commands, with `dsh` retained as the legacy alias.
 
@@ -34,39 +36,44 @@ pnpm run build
 pnpm curupiracode web
 ```
 
-The UI opens at `http://127.0.0.1:3080`. Pass `--no-open` to start without opening a browser.
+The command prints an address such as `http://127.0.0.1:3080/?token=…` and opens it in the browser. The token creates a session cookie in that browser; afterwards, `http://127.0.0.1:3080` is enough. Pass `--no-open` to start without opening a browser, then open the printed address.
 
 ```sh
 pnpm curupiracode web --no-open
 ```
+
+To use Google Gemini, install the Antigravity CLI (`agy` 1.4.3 or later for Gemini 4 Argon) and run `agy` once in a terminal to sign in with your Google account. The [adapter README](packages/llm/llm-gemini/README.md) describes the models and settings.
 
 ## What's inside
 
 **Agent core (host, Cordis composition)**
 
 - Local-first agent harness: every capability is a plugin row; the host process composes registries, persistence, and services without a cloud dependency.
-- Sessions with full trajectory, resumable conversations, and same-session completion goals for long-running objectives.
+- Sessions with full trajectory, resumable conversations, archiving, and same-session completion goals for long-running objectives.
 - Background subagents, multi-agent workflow orchestration, and fresh-agent iterative loops.
-- Credential seam for local secrets plus OAuth authorization flows started straight from the UI.
+- Per-session agent modes: standard, minimal, Creator (Cordis), and PTC, where the agent calls tools through code.
+- Scheduled automatic tasks and background jobs followed in the interface.
+- Credential seam for local secrets plus OAuth authorization flows.
 - Tool sandboxing with file-access policies and approval prompts; agents declare the minimum permission they need.
-- Dynamic plugins (`@pluginId`): define, run, update, and roll back hot-extended host/client code from the running session.
+- Dynamic plugins (`@pluginId`) and a plugin manager: install, define, run, update, and roll back host/client code from the running session.
 
 **Intelligence providers**
 
-- DeepSeek official models out of the box.
-- Google Gemini through a consumer Google login — the adapter talks to the locally installed, already-authenticated Antigravity CLI (`agy`), so there is no API key to manage; a Google-account OAuth transport (Code Assist) remains as fallback for enterprise deployments.
-- Any OpenAI-compatible endpoint through the generic provider, with per-model reasoning effort, retry policies, and a model picker.
+- DeepSeek official models, through an API key or a DeepSeek account.
+- Google Gemini through a consumer Google login — the adapter talks to the locally installed, already-authenticated Antigravity CLI (`agy`), so there is no API key to manage; the catalog starts with Gemini 4 Argon, and a Google-account OAuth transport (Code Assist) remains as fallback.
+- OpenAI, Anthropic, Kimi, and dozens of other providers from the built-in catalog, plus any compatible endpoint, with per-model reasoning effort, retry policies, and a model picker.
 
 **Curupira Memória (second brain)**
 
 - Local knowledge package with document ingestion, passage chunking, and search carrying complete provenance: document, excerpt, and offset.
 - On-device SQLite store with a content-addressed vault, so re-ingestion is cheap and never duplicates data.
 - **PDF**, **DOCX**, **HTML**, and plain-text extraction, designed to read an Obsidian vault directly.
-- Ready-to-use agent tools for ingesting folders and searching user notes after installation.
+- Ready-to-use agent tools for ingesting folders, searching user notes, and finding related material in the standard, PTC, and Creator modes.
 
 **Web & knowledge**
 
 - Built-in search with no extra key: DuckDuckGo with Bing fallback and Google News; optional SearXNG through an operator-controlled instance.
+- HTTP page reading so the agent can consult the content of results.
 
 **Chrome and Edge extension**
 
@@ -74,13 +81,15 @@ pnpm curupiracode web --no-open
 - Automation with a validated plan and editable preview: only user-approved actions run in the browser.
 - Assisted form answering without automatic submission, blocking passwords, authentication codes, cards, and uploads.
 - Portable multi-page macro recording and replay, stored locally and required to stop before final submission.
-- Source code and installation instructions in `apps/browser-extension`.
+- Source code, installation instructions, and the status of the server bridge in `apps/browser-extension`.
 
 **Web interface (client)**
 
 - Local GUI at `http://127.0.0.1:3080` with Brazilian Portuguese as the primary experience, plus English and Chinese.
-- Models page with provider onboarding, API-key and sign-in cards that poll until the connection is confirmed, and live provider/model listing.
-- CurupiraCode identity and official theme, plus the Cyberpunk Neon community theme; conversation views, trajectory tables, and context metering.
+- Right sidebar with the workspace files, an embedded browser, a terminal, and document preview, including PDF, spreadsheets, and Office files.
+- Models page with provider onboarding, API-key cards, and live provider and model listing.
+- Keyboard shortcuts, session log export, conversation views, trajectory tables, and context metering.
+- CurupiraCode identity and the optional Cyberpunk Neon community theme ([`ui-theme-cyberpunk`](packages/client/ui-theme-cyberpunk/README.md)).
 
 **Command line**
 
@@ -97,6 +106,20 @@ Internal namespaces remain `@deepseek-ai/dsh-*` in this phase so the existing ec
 ## Contributing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and the [architecture documentation](docs/architecture.md). New integrations should be plugins, request the minimum permissions, and keep users in control of external actions.
+
+## Citation
+
+CurupiraCode derives from DeepSeek Harness; to cite the original architecture:
+
+```bibtex
+@misc{deepseek-harness2026,
+  title={DeepSeek Harness: Everything is a Plugin},
+  author={DeepSeek-AI},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
+}
+```
 
 ## License
 

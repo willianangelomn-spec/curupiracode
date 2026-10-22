@@ -1,8 +1,8 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-sidebar-terminal`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-sidebar-terminal/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-terminal/src/client/locales.ts'
 
 /** `sidebarTerminal` namespace, complete against its owning key set. */
 export const sidebarTerminalPtBr = {
@@ -12,7 +12,7 @@ export const sidebarTerminalPtBr = {
   shell: 'Escolher shell',
   shellLoading: 'Carregando shells…',
   shellEmpty: 'Nenhum shell disponível',
-  description: 'Execute comandos no workspace da sessão',
+  description: 'Execute comandos na pasta de trabalho da sessão',
   title: 'Terminal',
   new: 'Novo terminal',
   loading: 'Lendo o ambiente do terminal…',

@@ -28,7 +28,7 @@ This adapter serves Google **Gemini** through a **Google account sign-in** inste
 The base bundle mounts the adapter, so a CurupiraCode installation only needs the CLI:
 
 1. Install the Antigravity CLI and run `agy` once in a terminal to sign in with your Google account.
-2. Pick a model of the **Google Gemini** provider in the model selector.
+2. Pick a model of the **Google Gemini** provider in the model selector. **Settings → Models** lists the provider without a key field.
 
 ```yaml
 - id: llm-gemini
@@ -48,7 +48,7 @@ The shipped catalog follows `agy`, where the reasoning effort is part of the id:
 
 | Field | Default | Meaning |
 |---|---|---|
-| `models` | `[]` | Models added to the catalog; an entry with a shipped id replaces it in place. Each entry takes `id`, optional `name`, `contextWindow` (default 1,048,576), and `images` (default false). |
+| `models` | `[]` | Models added to the catalog; an entry with a shipped id replaces it in place. Each entry takes `id`, optional `name`, `contextWindow` (default 1,048,576), and `images` (default false). Edits apply without restarting the server. |
 | `requestImagePixelBudget` | `4194304` | Pixels per request image (2048 × 2048). |
 | `requestImageMaxBytes` | `4194304` | Encoded bytes per request image. |
 | `maxRequestImageBytes` | `20971520` | Base64 image payload per request; beyond it the request asks the conversation to offload its oldest images. |

@@ -28,7 +28,7 @@ kind: "package-reference"
 基础组合包会挂载该适配器，因此 CurupiraCode 安装只需要 CLI：
 
 1. 安装 Antigravity CLI，并在终端运行一次 `agy`，用 Google 账号登录。
-2. 在模型选择器中选择 **Google Gemini** 提供方的模型。
+2. 在模型选择器中选择 **Google Gemini** 提供方的模型。**设置 → 模型**会列出该提供方，且不显示密钥字段。
 
 ```yaml
 - id: llm-gemini
@@ -48,7 +48,7 @@ kind: "package-reference"
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `models` | `[]` | 加入目录的模型；与内置 id 相同的条目会原位替换。每个条目包含 `id`，以及可选的 `name`、`contextWindow`（默认 1,048,576）和 `images`（默认 false）。 |
+| `models` | `[]` | 加入目录的模型；与内置 id 相同的条目会原位替换。每个条目包含 `id`，以及可选的 `name`、`contextWindow`（默认 1,048,576）和 `images`（默认 false）。修改无需重启服务器即可生效。 |
 | `requestImagePixelBudget` | `4194304` | 每张请求图片的像素数（2048 × 2048）。 |
 | `requestImageMaxBytes` | `4194304` | 每张请求图片的编码字节数。 |
 | `maxRequestImageBytes` | `20971520` | 每个请求的 base64 图片负载；超出时请求会要求对话卸载最旧的图片。 |

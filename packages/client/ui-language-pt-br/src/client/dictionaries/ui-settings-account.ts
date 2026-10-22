@@ -1,8 +1,8 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-settings-account`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-settings-account/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-settings-account/src/client/index.ts'
 
 /** `settings.account` namespace, complete against its owning key set. */
 export const settingsAccountPtBr = {
@@ -61,4 +61,43 @@ export const settingsAccountPtBr = {
   quotaDescription: 'O CurupiraCode não pode iniciar uma nova tarefa com esta conta sem saldo disponível. Deseja recarregar? Você também pode recarregar depois em Configurações → Conta.',
   quotaTopUp: 'Recarregar',
   bonusNoticeTitle: 'Bônus creditado',
+  onboardingArtworkLocale: 'en',
+  onboardingWelcome: 'Boas-vindas ao',
+  onboardingBrand: 'CurupiraCode',
+  onboardingIntroduction: 'O CurupiraCode trabalha em uma pasta local e usa ferramentas para ler e escrever arquivos no seu computador. Ele pode ajudar você a pesquisar e organizar informações, criar documentos e planilhas, escrever código, resolver problemas e muito mais.',
+  onboardingStart: 'Começar',
+  onboardingCredit: 'Adicionar créditos',
+  onboardingCreditDescription: 'Os créditos são cobrados conforme os tokens usados pelos modelos e pelas ferramentas. Adicione créditos com antecedência para manter suas tarefas rodando sem interrupção. O saldo só é usado enquanto o agente trabalha em uma tarefa.',
+  onboardingTopUp: 'Adicionar créditos',
+  onboardingLater: 'Próximo',
+  onboardingFundedTopUp: 'Adicionar créditos',
+  onboardingPurposePrefix: 'Com o que você gostaria',
+  onboardingPurposeSuffix: 'de ajuda?',
+  onboardingPurposeDescription: 'Vamos adaptar a interface e as ferramentas ao seu jeito de trabalhar.',
+  onboardingOffice: 'Escritório e trabalho criativo',
+  onboardingOfficeDescription: 'Editar documentos, organizar dados, criar apresentações e mais',
+  onboardingDevelopment: 'Programação e desenvolvimento',
+  onboardingDevelopmentDescription: 'Editar código, depurar problemas, executar comandos, gerenciar arquivos de projeto e mais',
+  onboardingContinue: 'Continuar',
+  onboardingProcess: 'Quanto detalhe você quer ver?',
+  onboardingProcessDescription: 'Isso muda apenas como o progresso é exibido, não o que o CurupiraCode pode fazer.',
+  onboardingCompact: 'Apenas resultados',
+  onboardingCompactDescription: 'Veja só os resultados, em uma interface limpa e simples',
+  onboardingStandard: 'Detalhes principais',
+  onboardingStandardDescription: 'Foco nos resultados, mostrando apenas as etapas e ações mais importantes',
+  onboardingDetailed: 'Detalhes completos',
+  onboardingDetailedDescription: 'Veja o processo completo para facilitar a depuração e a solução de problemas',
+  onboardingEnter: 'Abrir o app',
+  onboardingBack: 'Voltar',
+  onboardingSkip: 'Pular',
+  onboardingSkipTitle: 'Pular a configuração?',
+  onboardingSkipDescription: 'Você pode mudar como o progresso, o desempenho e o uso são exibidos, ou ativar as ferramentas de programação, a qualquer momento em Configurações → Geral.',
+  onboardingKeepSetting: 'Continuar a configuração',
+  onboardingNoCreditTitle: 'Pular a adição de créditos?',
+  onboardingNoCreditDescription: 'Sem créditos, não é possível iniciar novas tarefas com a conta DeepSeek. Você pode adicioná-los depois em Configurações → Conta.',
+  onboardingUnderstood: 'Entendi',
+  onboardingGoTopUp: 'Adicionar créditos',
+  onboardingSaveFailed: 'Não foi possível salvar as configurações. Tente novamente.',
+  onboardingRetry: 'Tentar novamente',
+  onboardingLoading: 'Carregando configurações…',
 } satisfies LocaleDictOf<'settings.account'>

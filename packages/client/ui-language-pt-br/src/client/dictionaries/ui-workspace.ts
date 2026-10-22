@@ -1,20 +1,20 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-workspace`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/src/client/index.ts'
 
 /** `workspace` namespace, complete against its owning key set. */
 export const workspacePtBr = {
-  'defaultWorkspace.failed': 'Não foi possível criar o workspace padrão. Use Escolher workspace para selecionar uma pasta.',
-  'draft.workspaceRequired': 'Escolha um workspace primeiro.',
+  'defaultWorkspace.failed': 'Não foi possível criar o trabalho padrão. Use Escolher trabalho para selecionar uma pasta.',
+  'draft.workspaceRequired': 'Escolha um trabalho primeiro.',
   'draft.initializationFailed': 'Não foi possível preencher o rascunho. Tente novamente em instantes.',
   'group.ungrouped': 'Sem grupo',
   'session.new': 'Nova sessão',
   'session.untitled': 'Sem título',
   'shortcut.noSession': 'Selecione uma sessão primeiro',
   'shortcut.noPicker': 'Seletor de diretório indisponível',
-  'shortcut.directoryBusy': 'Selecionando ou adicionando um workspace',
+  'shortcut.directoryBusy': 'Selecionando ou adicionando um trabalho',
   'shortcut.noCompletedTurn': 'Esta sessão não tem nenhum turno concluído',
   'shortcut.forkFailed': 'Não foi possível ramificar a sessão. Tente novamente.',
   'section.workspaces': 'Trabalhos',
@@ -22,7 +22,7 @@ export const workspacePtBr = {
   'viewOptions.label': 'Opções de visualização',
   'groupBy.label': 'Agrupar por',
   'groupBy.workspace': 'Trabalho',
-  'groupBy.workspaceTree': 'Árvore de workspaces',
+  'groupBy.workspaceTree': 'Árvore de trabalhos',
   'groupBy.flat': 'Em uma única lista',
   'orderBy.label': 'Ordenar por',
   'orderBy.manual': 'Manual',

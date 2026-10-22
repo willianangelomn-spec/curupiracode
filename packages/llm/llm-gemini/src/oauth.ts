@@ -59,12 +59,12 @@ function randomState(): string {
 
 /** Minimal HTML page returned to the browser after a successful sign-in. */
 function successHtml(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Signed in</title>`
-    + `<style>body{font-family:system-ui,sans-serif;background:#09090b;color:#fafafa;display:flex;`
-    + `min-height:100vh;align-items:center;justify-content:center;margin:0}main{text-align:center;padding:24px}`
-    + `h1{font-size:24px;margin:0 0 8px}p{color:#a1a1aa;line-height:1.6}</style></head>`
-    + `<body><main><h1>Authentication successful</h1>`
-    + `<p>You can close this tab and return to CurupiraCode.</p></main></body></html>`
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Signed in</title>'
+    + '<style>body{font-family:system-ui,sans-serif;background:#09090b;color:#fafafa;display:flex;'
+    + 'min-height:100vh;align-items:center;justify-content:center;margin:0}main{text-align:center;padding:24px}'
+    + 'h1{font-size:24px;margin:0 0 8px}p{color:#a1a1aa;line-height:1.6}</style></head>'
+    + '<body><main><h1>Authentication successful</h1>'
+    + '<p>You can close this tab and return to CurupiraCode.</p></main></body></html>'
 }
 
 interface TokenResponse {

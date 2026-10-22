@@ -1,8 +1,8 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-settings-plugin-inventory`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-settings-plugin-inventory/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-settings-plugin-inventory/src/client/index.ts'
 
 /** `settings.pluginInventory` namespace, complete against its owning key set. */
 export const settingsPluginInventoryPtBr = {

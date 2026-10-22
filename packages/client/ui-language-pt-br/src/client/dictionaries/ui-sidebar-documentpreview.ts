@@ -1,8 +1,15 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-sidebar-documentpreview`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
+// Type-only: the owning package's LocaleNamespaceMap merges.
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/src/client/code/locales.ts'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/src/client/excel/locales.ts'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/src/client/html/locales.ts'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/src/client/image/locales.ts'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/src/client/index.ts'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/src/client/markdown/locales.ts'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/src/client/office/index.ts'
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/src/client/pdf/locales.ts'
 
 /** `sidebarCodePreview` namespace, complete against its owning key set. */
 export const sidebarCodePreviewPtBr = {
@@ -45,6 +52,12 @@ export const sidebarImagePtBr = {
   loading: 'Renderizando documento...',
   failed: 'Não foi possível exibir esta imagem.',
   unsupported: 'A prévia de imagem exige o conteúdo completo do arquivo.',
+  zoomControls: 'Controles de zoom',
+  zoomMenu: 'Escolher zoom',
+  zoomOut: 'Diminuir zoom',
+  zoomIn: 'Aumentar zoom',
+  zoomFitWidth: 'Ajustar à largura',
+  zoomValue: '{percent}%',
 } satisfies LocaleDictOf<'sidebarImage'>
 
 /** `sidebarDocumentPreview` namespace, complete against its owning key set. */
@@ -111,4 +124,10 @@ export const sidebarPdfPtBr = {
   workerFailed: 'O processo de renderização do PDF não pôde continuar. Tente novamente.',
   unsupported: 'A prévia de PDF exige o conteúdo completo do arquivo.',
   retry: 'Tentar novamente',
+  zoomControls: 'Controles de zoom',
+  zoomMenu: 'Escolher zoom',
+  zoomOut: 'Diminuir zoom',
+  zoomIn: 'Aumentar zoom',
+  zoomFitWidth: 'Ajustar à largura',
+  zoomValue: '{percent}%',
 } satisfies LocaleDictOf<'sidebarPdf'>

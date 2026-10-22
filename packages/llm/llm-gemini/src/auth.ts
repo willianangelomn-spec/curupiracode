@@ -75,7 +75,7 @@ export async function readGrant(ctx: Context): Promise<GeminiGrant | undefined> 
 
 /** Persist the grant as an opaque `grant` record. */
 export async function writeGrant(ctx: Context, grant: GeminiGrant): Promise<void> {
-  await credentialsService(ctx).modifyRecord(recordKey, async () => ({
+  await credentialsService(ctx).modifyRecord(recordKey, () => Promise.resolve({
     kind: 'grant',
     payload: grant,
   }))

@@ -84,8 +84,8 @@ export interface GeminiAdapterOptions {
   maxRequestImageBytes: number
   /** Provider-owned request retry policy, resolved once at registration. */
   retryPolicy: ResolvedRetryPolicy
-  /** Effective model catalog: the shipped models merged with configured ones. */
-  models: readonly GeminiModelDef[]
+  /** Current effective model catalog: the shipped models merged with configured ones. */
+  models: () => readonly GeminiModelDef[]
 }
 
 /** Google-account-OAuth Gemini adapter. */
@@ -108,11 +108,11 @@ export class GeminiAdapter extends LlmAdapter {
   }
 
   private modelById(id: string): GeminiModelDef | undefined {
-    return this.options.models.find(model => model.id === id)
+    return this.options.models().find(model => model.id === id)
   }
 
   override listModels(_provider: string): Promise<readonly LlmModelInfo[]> {
-    return Promise.resolve(this.options.models.map(model => ({
+    return Promise.resolve(this.options.models().map(model => ({
       provider: PROVIDER,
       id: model.id,
       name: model.name,

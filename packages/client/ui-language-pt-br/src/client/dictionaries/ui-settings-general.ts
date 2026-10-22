@@ -1,8 +1,8 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-settings-general`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-settings-general/src/client/index.ts'
 
 /** `settings` namespace, complete against its owning key set. */
 export const settingsPtBr = {
@@ -25,7 +25,7 @@ export const settingsPtBr = {
   'desktop.update.installNetworkFailed': 'Não foi possível instalar a atualização. Verifique sua conexão e tente novamente.',
   'desktop.update.stopFailed': 'Não foi possível parar as tarefas com segurança. A atualização não foi instalada. Tente novamente mais tarde.',
   'desktop.update.tasksChanged': 'Novas tarefas começaram. Confirme novamente para parar as tarefas e atualizar.',
-  'desktop.update.tasksUnavailable': 'O status das tarefas está indisponível. Tente atualizar novamente quando o workspace estiver pronto.',
+  'desktop.update.tasksUnavailable': 'O status das tarefas está indisponível. Tente atualizar novamente quando o trabalho estiver pronto.',
   title: 'Configurações',
   close: 'Fechar',
   openDocument: 'Abrir arquivo de configuração',

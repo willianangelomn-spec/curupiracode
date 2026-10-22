@@ -1,8 +1,8 @@
 /** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-locale`. */
 
 import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: pulls the owning package's LocaleNamespaceMap merge.
-import type {} from '@deepseek-ai/dsh-client-locale/client'
+// Type-only: the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-locale/src/client/index.ts'
 
 /** `common` namespace, complete against its owning key set. */
 export const commonPtBr = {
@@ -38,7 +38,7 @@ export const commonPtBr = {
   expand: 'Expandir',
   back: 'Voltar',
   'brand.localBuild': 'CurupiraCode',
-  'workspace.defaultName': 'Workspace padrão',
+  'workspace.defaultName': 'Trabalho padrão',
   unknown: 'Desconhecido',
   none: 'Nenhum',
   truncated: 'Conteúdo truncado',

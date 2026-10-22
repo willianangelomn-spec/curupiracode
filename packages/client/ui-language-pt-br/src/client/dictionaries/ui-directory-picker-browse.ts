@@ -3,7 +3,7 @@
 
 /** `directory-browser` namespace (registered untyped by its owner). */
 export const directoryBrowserPtBr = {
-  'browser.title': 'Selecionar diretório do workspace',
+  'browser.title': 'Selecionar pasta do trabalho',
   'browser.home': 'Início',
   'browser.newFolder': 'Nova pasta',
   'browser.folderName': 'Nome da pasta',
