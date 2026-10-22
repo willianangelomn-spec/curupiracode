@@ -77,6 +77,8 @@ export const DEFAULT_PASSAGE_OVERLAP_CHARS = 150
 
 /** Upper bound applied when a search omits `maxResults`. */
 export const DEFAULT_MAX_RESULTS = 10
+/** Relations returned when a caller states no bound. */
+const DEFAULT_RELATED_RESULTS = 8
 
 /**
  * The knowledge service. Registered as `ctx.knowledge` (one per context).
@@ -220,8 +222,14 @@ export class KnowledgeRuntime extends Service {
     return this.resolveStore().list(signal)
   }
 
-  /** Find materials semantically related to one stored document. */
-  async related(id: string, maxResults = 8, signal?: AbortSignal): Promise<readonly KnowledgeRelation[]> {
+  /**
+   * Find materials semantically related to one stored document.
+   * @param id - the document's content hash.
+   * @param maxResults - most relations to return, best first.
+   * @param signal - cancellation forwarded to the store.
+   * @returns Related documents with their similarity, best first.
+   */
+  async related(id: string, maxResults: number = DEFAULT_RELATED_RESULTS, signal?: AbortSignal): Promise<readonly KnowledgeRelation[]> {
     const store = this.resolveStore()
     if (store.related === undefined) {
       throw new KnowledgeError('the configured knowledge store has no semantic relation index', 'KNOWLEDGE_STORE_ERROR')

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Brazilian Portuguese",
+    "description": "Adds Português (Brasil) to the language picker and translates every shipped UI namespace."
+  }
+}

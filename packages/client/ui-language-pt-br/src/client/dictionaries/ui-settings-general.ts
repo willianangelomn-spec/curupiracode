@@ -1,0 +1,50 @@
+/** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-settings-general`. */
+
+import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
+// Type-only: pulls the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
+
+/** `settings` namespace, complete against its owning key set. */
+export const settingsPtBr = {
+  trigger: 'Configurações',
+  'shortcut.open': 'Abrir configurações',
+  'desktop.update.available': 'Atualizar',
+  'desktop.update.checking': 'Procurando atualizações…',
+  'desktop.update.progress': '{percent}%',
+  'desktop.update.verifying': 'Verificando arquivos da atualização…',
+  'desktop.update.installing': 'Preparando para reiniciar…',
+  'desktop.update.ready': 'Instalar e reiniciar',
+  'desktop.update.retry': 'Tentar atualizar novamente',
+  'desktop.update.versionDetail': '{label}: {version}',
+  'desktop.update.downloadDetail': 'Baixando atualização: {percent}%\nVersão de destino: {version}',
+  'desktop.update.checkFailed': 'Não foi possível procurar atualizações. Tente novamente mais tarde.',
+  'desktop.update.downloadFailed': 'Não foi possível baixar a atualização. Tente novamente.',
+  'desktop.update.installFailed': 'Não foi possível instalar a atualização. Tente novamente mais tarde.',
+  'desktop.update.checkNetworkFailed': 'Não foi possível procurar atualizações. Verifique sua conexão e tente novamente.',
+  'desktop.update.downloadNetworkFailed': 'Não foi possível baixar a atualização. Verifique sua conexão e tente novamente.',
+  'desktop.update.installNetworkFailed': 'Não foi possível instalar a atualização. Verifique sua conexão e tente novamente.',
+  'desktop.update.stopFailed': 'Não foi possível parar as tarefas com segurança. A atualização não foi instalada. Tente novamente mais tarde.',
+  'desktop.update.tasksChanged': 'Novas tarefas começaram. Confirme novamente para parar as tarefas e atualizar.',
+  'desktop.update.tasksUnavailable': 'O status das tarefas está indisponível. Tente atualizar novamente quando o workspace estiver pronto.',
+  title: 'Configurações',
+  close: 'Fechar',
+  openDocument: 'Abrir arquivo de configuração',
+  'openDocument.error': 'Não foi possível abrir o arquivo de configuração',
+  'general.nav': 'Geral',
+  'general.currentVersion': 'Versão atual: {version}',
+  'developerTools.title': 'Mostrar visão de código',
+  'developerTools.error': 'Não foi possível salvar. Tente novamente.',
+  'developerTools.description': 'Mostra a trajetória, os diffs de código e todos os presets de agente',
+  'connection.error': 'Desconectado',
+  'connection.connecting': 'Reconectando',
+  'connection.connected': 'Conectado',
+  'connection.reconnect': 'Desconectado; reconectar agora',
+  'connection.restart': 'Reconectando; reconectar agora',
+  'hostRelease.title': 'A versão do serviço mudou',
+  'hostRelease.description': 'A versão do serviço mudou. Esta página pausou as atualizações ao vivo; recarregue para carregar a nova versão.',
+  'hostRelease.service': 'Serviço',
+  'hostRelease.page': 'Página',
+  'hostRelease.unknown': 'Desconhecida',
+  'hostRelease.reload': 'Recarregar para carregar a nova versão',
+  'hostRelease.later': 'Agora não',
+} satisfies LocaleDictOf<'settings'>

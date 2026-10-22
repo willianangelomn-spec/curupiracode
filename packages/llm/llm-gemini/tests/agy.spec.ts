@@ -1,8 +1,10 @@
-import { access, readFile } from 'node:fs/promises'
+import { access, chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { GenerateOptions, Message } from '@deepseek-ai/dsh-llm'
 import type { ImageAttachmentRef, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
-import { flattenPrompt, prepareAgyPrompt } from '../src/agy.ts'
+import { flattenPrompt, generateViaAgy, prepareAgyPrompt } from '../src/agy.ts'
 
 const ref: ImageAttachmentRef = {
   attachmentId: 'sha256:agy-image' as ImageAttachmentRef['attachmentId'],
@@ -55,5 +57,35 @@ describe('Antigravity image prompt', () => {
     await prepared.dispose()
     await expect(access(directory)).rejects.toThrow()
     await expect(prepared.dispose()).resolves.toBeUndefined()
+  })
+})
+
+/** Run one fake agy executable that prints the given stderr and success JSON. */
+async function runFakeAgy(stderr: string): Promise<unknown> {
+  const directory = await mkdtemp(join(tmpdir(), 'dsh-gemini-fake-agy-'))
+  try {
+    const binary = join(directory, 'agy')
+    await writeFile(binary, [
+      '#!/bin/sh',
+      `printf '%s\\n' ${JSON.stringify(stderr)} >&2`,
+      `printf '%s' '${JSON.stringify({ status: 'SUCCESS', response: 'ok' })}'`,
+      '',
+    ].join('\n'))
+    await chmod(binary, 0o755)
+    return await generateViaAgy({ binary, model: 'gemini-4-argon-high', prompt: 'oi' })
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
+describe.skipIf(process.platform === 'win32')('Antigravity model selection', () => {
+  it('refuses an answer agy produced after replacing an unknown model id', async () => {
+    await expect(runFakeAgy(
+      'model gemini-4-argon-high is not recognized as a known model or custom model in settings.',
+    )).rejects.toMatchObject({ code: 'UNKNOWN_MODEL', message: expect.stringContaining('1.4.3') as unknown })
+  })
+
+  it('accepts a successful run of a recognized model', async () => {
+    await expect(runFakeAgy('')).resolves.toMatchObject({ status: 'SUCCESS', response: 'ok' })
   })
 })

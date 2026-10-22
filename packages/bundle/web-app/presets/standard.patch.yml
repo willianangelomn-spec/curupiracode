@@ -126,3 +126,7 @@
           - id: tool-plugin-market
             name: '@deepseek-ai/dsh-plugin-market/tools'
             disabled: true
+          # Curupira Memória: the local second-brain tools stay agent-scoped so
+          # tool-free presets (browser, browser-chat) cannot read the vault.
+          - id: knowledge-tools
+            name: '@deepseek-ai/dsh-knowledge-tools'

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { GenerateOptions, Message } from '@deepseek-ai/dsh-llm'
 import type { ImageAttachmentRef, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
 import { buildRequestBody, effortToBudget, GeminiStreamConverter } from '../src/convert.ts'
-import { GEMINI_MODELS, modelById } from '../src/models.ts'
+import { configuredModels } from '../src/config.ts'
+import { GEMINI_MODELS, mergeModels } from '../src/models.ts'
 
 const imageRef: ImageAttachmentRef = {
   attachmentId: 'sha256:image' as ImageAttachmentRef['attachmentId'],
@@ -43,12 +44,14 @@ function assistantToolCall(): Message {
   } as unknown as Message
 }
 
-function toolResult(): Message {
+function toolResult(callId = 'c1', text = 'sunny', isError = false): Message {
   return {
-    id: 't1' as Message['id'],
-    role: 'user',
-    content: [{ type: 'tool-result', toolCallId: 'c1' as never, content: [{ type: 'text', text: 'sunny' }], isError: false }],
-    source: { kind: 'tool', callId: 'c1' as never },
+    id: `t-${callId}` as Message['id'],
+    role: 'tool',
+    toolCallId: callId,
+    isError,
+    content: [{ type: 'text', text }],
+    source: { kind: 'tool', callId },
   } as unknown as Message
 }
 
@@ -61,10 +64,33 @@ function baseOptions(messages: Message[]): GenerateOptions {
 }
 
 describe('catalog', () => {
+  const byId = (id: string) => GEMINI_MODELS.find(model => model.id === id)
+
   it('lists curated models with context windows', () => {
-    expect(GEMINI_MODELS.length).toBeGreaterThan(0)
-    expect(modelById('gemini-3.1-pro-high')?.contextWindow).toBe(1_048_576)
-    expect(modelById('gemini-3.1-pro-high')?.inputModalities).toEqual(['text', 'image'])
+    expect(byId('gemini-3.1-pro-high')?.contextWindow).toBe(1_048_576)
+    expect(byId('gemini-3.1-pro-high')?.inputModalities).toEqual(['text', 'image'])
+  })
+
+  it('offers Gemini 4 Argon at every agy effort first', () => {
+    expect(GEMINI_MODELS.slice(0, 3).map(model => model.id)).toEqual([
+      'gemini-4-argon-high', 'gemini-4-argon-medium', 'gemini-4-argon-low',
+    ])
+    expect(byId('gemini-4-argon-high')?.name).toBe('Gemini 4 Argon (High)')
+  })
+
+  it('replaces shipped entries in place and appends new configured ids', () => {
+    const merged = mergeModels(configuredModels([
+      { id: 'gemini-4-argon-high', name: 'Argon', contextWindow: 2_000_000, images: true },
+      { id: 'claude-opus-5-5-thinking' },
+    ]))
+    expect(merged[0]).toEqual({
+      id: 'gemini-4-argon-high', name: 'Argon', contextWindow: 2_000_000, inputModalities: ['text', 'image'], reasoning: false,
+    })
+    expect(merged.at(-1)).toEqual({
+      id: 'claude-opus-5-5-thinking', name: 'claude-opus-5-5-thinking', contextWindow: 1_048_576, inputModalities: ['text'], reasoning: false,
+    })
+    expect(merged).toHaveLength(GEMINI_MODELS.length + 1)
+    expect(mergeModels([])).toBe(GEMINI_MODELS)
   })
 })
 
@@ -88,6 +114,25 @@ describe('buildRequestBody', () => {
     expect(body.contents).toHaveLength(1)
     expect(body.contents[0]?.role).toBe('user')
     expect(body.contents[0]?.parts).toEqual([{ text: 'hello' }])
+  })
+
+  it('groups consecutive tool results into one response turn and reports failures as errors', () => {
+    const second = { ...assistantToolCall() } as unknown as { content: unknown[] }
+    second.content = [
+      { type: 'tool-call', id: 'c1', name: 'getWeather', arguments: '{}' },
+      { type: 'tool-call', id: 'c2', name: 'getTime', arguments: 'not json' },
+    ]
+    const body = buildRequestBody(baseOptions([
+      second as unknown as Message, toolResult('c1'), toolResult('c2', 'boom', true),
+    ]), undefined)
+    expect(body.contents).toHaveLength(2)
+    expect(body.contents[0]?.parts.map(part => part.functionCall)).toEqual([
+      { name: 'getWeather', args: {} }, { name: 'getTime', args: {} },
+    ])
+    expect(body.contents[1]?.parts).toEqual([
+      { functionResponse: { name: 'getWeather', response: { result: 'sunny' } } },
+      { functionResponse: { name: 'getTime', response: { error: 'boom' } } },
+    ])
   })
 
   it('correlates a tool call with its result by id', () => {
@@ -125,7 +170,7 @@ describe('buildRequestBody', () => {
       new Map([[imageRef.attachmentId, requestImage]]),
     )
     expect(body.contents[0]?.parts).toEqual([
-      { text: 'Image sha256:image; request image 1x1px.' },
+      { text: 'Image sha256:image; request preview 1x1px. It may be resized or re-encoded; source dimensions, format, and byte size may differ.' },
       { inlineData: { mimeType: 'image/png', data: 'AQID' } },
       { text: 'describe' },
     ])

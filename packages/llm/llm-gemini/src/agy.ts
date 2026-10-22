@@ -17,6 +17,9 @@ import { LlmError } from '@deepseek-ai/dsh-llm'
 import type { ContentBlock, GenerateOptions } from '@deepseek-ai/dsh-llm'
 import type { AttachmentId, ImageMediaType, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
 
+/** Warning agy prints before replacing an unknown `--model` id with its default model. */
+const UNKNOWN_MODEL_WARNING = /not recognized as a known model/i
+
 /** One parsed `agy --output-format json` run. */
 export interface AgyResult {
   conversation_id?: string
@@ -50,7 +53,7 @@ function imageExtension(mediaType: ImageMediaType): string {
   }
 }
 
-/** Flatten model-visible blocks, preserving staged image positions. */
+/** Flatten model-visible text and image blocks, preserving staged image positions; other blocks carry no prompt text. */
 function blockText(
   blocks: readonly ContentBlock[],
   imagePaths: ReadonlyMap<AttachmentId, string> | undefined,
@@ -67,7 +70,7 @@ function blockText(
         )
       }
       out += `\nImagem anexada: @${path}\n`
-    } else if (block.type === 'tool-result') out += blockText(block.content, imagePaths)
+    }
   }
   return out
 }
@@ -91,7 +94,10 @@ export function flattenPrompt(
       }
       continue
     }
-    const who = message.role === 'assistant' ? 'Assistente' : 'Usuário'
+    const who = message.role === 'assistant' ? 'Assistente'
+      : message.role === 'tool' ? 'Resultado de ferramenta'
+        : message.role === 'developer' ? 'Sistema'
+          : 'Usuário'
     const text = blockText(message.content, imagePaths)
     if (text.length > 0) turns.push(`${who}: ${text}`)
   }
@@ -201,6 +207,19 @@ export function generateViaAgy(options: {
         parsed = JSON.parse(stdout.trim()) as AgyResult
       } catch {
         parsed = undefined
+      }
+      // agy substitutes its default model for an id it does not know and still
+      // reports success; answering from another model than the one selected
+      // must fail instead of passing silently.
+      if (UNKNOWN_MODEL_WARNING.test(stderr)) {
+        reject(new LlmError(
+          `O Antigravity CLI não reconhece o modelo "${model}" e trocaria por outro.`
+            + ' Atualize o agy (o Gemini 4 Argon exige a versão 1.4.3 ou mais recente),'
+            + ' confira com `agy models` se o seu plano Google libera esse modelo'
+            + ' ou escolha outro modelo do Gemini.',
+          'UNKNOWN_MODEL',
+        ))
+        return
       }
       if (code !== 0) {
         const detail = (parsed?.response !== undefined && parsed.response.length > 0

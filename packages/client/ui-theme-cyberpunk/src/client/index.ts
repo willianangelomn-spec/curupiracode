@@ -11,7 +11,7 @@
  * `@import` (stylesheet-level, not a variable) and pseudo-element decoration.
  */
 
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { Context as ClientContext } from '@deepseek-ai/cordis'
 // Type-only: pulls the theme plugin's Context merge (ctx.theme service face)
 // and the two-mode token-layer shape it validates at its boundary.
 import type { ThemeTokenOverrides } from '@deepseek-ai/dsh-client-ui-theme/client'

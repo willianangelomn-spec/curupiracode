@@ -1,0 +1,50 @@
+/** pt-BR dictionaries for the namespaces owned by `@deepseek-ai/dsh-client-ui-subagent`. */
+
+import type { LocaleDictOf } from '@deepseek-ai/dsh-client-ui-slots'
+// Type-only: pulls the owning package's LocaleNamespaceMap merge.
+import type {} from '@deepseek-ai/dsh-client-ui-subagent/client'
+
+/** `subagent` namespace, complete against its owning key set. */
+export const subagentPtBr = {
+  'duration.seconds': '{seconds}s',
+  'duration.minutes': '{minutes}min {seconds}s',
+  'duration.hours': '{hours}h {minutes}min {seconds}s',
+  'duration.days': '{days}d',
+  'duration.daysHours': '{days}d {hours}h',
+  'duration.months': '~{months}mês',
+  'duration.monthsDays': '~{months}mês {days}d',
+  'duration.years': '~{years}a',
+  'duration.yearsMonths': '~{years}a {months}mês',
+  'duration.exactDays': '{days}d {hours}h {minutes}min {seconds}s',
+  'duration.exactTitle': 'Duração ativa total: {duration}',
+  'tokens.thousand': '{value} mil',
+  'tokens.million': '{value} mi',
+  'tokens.total': '{value} tok',
+  'loading.label': 'Carregando subagentes…',
+  'load.error': 'Não foi possível carregar os subagentes',
+  'catalog.migrationRequired': 'Migração necessária',
+  retry: 'Tentar novamente',
+  'mode.external': 'Tarefa externa',
+  'mode.oneShot': 'execução única',
+  'mode.continuable': 'continuável',
+  'mode.unknown': 'modo desconhecido',
+  'readonly.unknown.body': 'Leia a sessão filha para saber se ela pode ser continuada.',
+  'activity.running': 'em execução',
+  'activity.completed': 'concluído',
+  'activity.inactive': 'inativo',
+  'branch.collapse': 'Recolher descendentes de {label}',
+  'branch.expand': 'Expandir descendentes de {label}',
+  'count.total.one': '{count} subagente',
+  'count.total.other': '{count} subagentes',
+  'count.running.one': '{count} subagente em execução',
+  'count.running.other': '{count} subagentes em execução',
+  'switcher.aria': 'Alternar subagente: {title}',
+  'tree.aria': 'Sessões de subagentes',
+  'open.sidebar': 'Abrir na barra lateral',
+  'open.sidebar.aria': 'Abrir {label} na barra lateral',
+  'sidebar.chat': 'Chat',
+  'readonly.oneShot.title': 'Registro de subagente de execução única',
+  'readonly.title': 'Este subagente está somente leitura por enquanto',
+  'readonly.oneShot.body': 'Tarefas de execução única não aceitam mensagens de continuação; visualize aqui o registro completo da execução.',
+  'readonly.body': 'A sessão pai está offline; reabra-a para continuar enviando mensagens.',
+} satisfies LocaleDictOf<'subagent'>

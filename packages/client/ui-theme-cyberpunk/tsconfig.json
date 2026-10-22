@@ -12,13 +12,7 @@
       "path": "../../../vendor/cordis"
     },
     {
-      "path": "../runtime"
-    },
-    {
-      "path": "../ui-theme"
-    },
-    {
-      "path": "../../runtime-diagnostics/invariants"
+      "path": "../ui-theme/tsconfig.client.json"
     }
   ]
 }

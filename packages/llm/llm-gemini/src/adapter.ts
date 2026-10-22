@@ -18,13 +18,21 @@ import {
 } from '@deepseek-ai/dsh-llm'
 import type {
   GenerateOptions,
+  ImageAttachmentAccessResolver,
   LlmModelInfo,
   LlmProviderInfo,
   LlmResolvedModelInfo,
+  PreparedAdapterCall,
   ResolvedRetryPolicy,
   StreamChunk,
 } from '@deepseek-ai/dsh-llm'
-import type { AttachmentStore, ImageRequestPolicy, RequestImageAttachment, AttachmentId } from '@deepseek-ai/dsh-attachment'
+import type {
+  AttachmentId,
+  AttachmentStore,
+  ImageAttachmentRef,
+  ImageRequestTarget,
+  RequestImageAttachment,
+} from '@deepseek-ai/dsh-attachment'
 import { ensureAccessToken, readGrant, writeGrant } from './auth.ts'
 import { agyBinary, generateViaAgy, prepareAgyPrompt } from './agy.ts'
 import type { AgyResult } from './agy.ts'
@@ -34,8 +42,9 @@ import {
   resolveCodeAssistProject,
 } from './codeassist.ts'
 import { buildRequestBody, effortToBudget, GeminiStreamConverter } from './convert.ts'
-import { prepareGeminiImages } from './images.ts'
-import { GEMINI_MODELS, modelById } from './models.ts'
+import { geminiImageTarget, prepareGeminiImages } from './images.ts'
+import type { GeminiImageBudget } from './images.ts'
+import type { GeminiModelDef } from './types.ts'
 
 /** The single provider route this adapter owns. */
 export const PROVIDER = 'gemini'
@@ -67,12 +76,16 @@ export interface GeminiAdapterOptions {
   ctx: Context
   /** Resolve the optional durable attachment service at request time. */
   resolveAttachments?: () => AttachmentStore | undefined
+  /** Resolve the current tool-world path of one durable image. */
+  resolveImageAccess: (attachments: AttachmentStore, ref: ImageAttachmentRef) => ReturnType<ImageAttachmentAccessResolver>
   /** Deterministic per-image projection limits for Gemini requests. */
-  imagePolicy: ImageRequestPolicy
+  imageBudget: GeminiImageBudget
   /** Maximum accumulated base64 image payload in one Gemini request. */
   maxRequestImageBytes: number
   /** Provider-owned request retry policy, resolved once at registration. */
   retryPolicy: ResolvedRetryPolicy
+  /** Effective model catalog: the shipped models merged with configured ones. */
+  models: readonly GeminiModelDef[]
 }
 
 /** Google-account-OAuth Gemini adapter. */
@@ -90,8 +103,16 @@ export class GeminiAdapter extends LlmAdapter {
     return this.options.retryPolicy
   }
 
+  override imageRequestTarget(_provider: string, _model: string, image: ImageAttachmentRef): ImageRequestTarget {
+    return geminiImageTarget(image, this.options.imageBudget)
+  }
+
+  private modelById(id: string): GeminiModelDef | undefined {
+    return this.options.models.find(model => model.id === id)
+  }
+
   override listModels(_provider: string): Promise<readonly LlmModelInfo[]> {
-    return Promise.resolve(GEMINI_MODELS.map(model => ({
+    return Promise.resolve(this.options.models.map(model => ({
       provider: PROVIDER,
       id: model.id,
       name: model.name,
@@ -101,8 +122,13 @@ export class GeminiAdapter extends LlmAdapter {
 
   override resolveModel(provider: string, model: string): Promise<LlmResolvedModelInfo> {
     if (provider !== PROVIDER) throw new LlmError(`llm-gemini does not own provider "${provider}"`, 'NO_ADAPTER')
-    const def = modelById(model)
-    if (def === undefined) throw new LlmError(`llm-gemini has no model "${model}"`, 'UNKNOWN_MODEL')
+    const def = this.modelById(model)
+    if (def === undefined) {
+      throw new LlmError(
+        `llm-gemini has no model "${model}"; list the ids your Antigravity CLI accepts with \`agy models\` and add it under the llm-gemini \`models\` setting`,
+        'UNKNOWN_MODEL',
+      )
+    }
     const resolved: LlmResolvedModelInfo = {
       provider: PROVIDER,
       id: model,
@@ -122,10 +148,7 @@ export class GeminiAdapter extends LlmAdapter {
     return Promise.resolve(resolved)
   }
 
-  override prepareCall(provider: string, model: string): Promise<{
-    model: LlmResolvedModelInfo
-    stream: (options: GenerateOptions) => AsyncIterable<StreamChunk>
-  }> {
+  override prepareCall(provider: string, model: string): Promise<PreparedAdapterCall> {
     return this.resolveModel(provider, model).then(info => ({
       model: info,
       stream: (options: GenerateOptions) => this.stream(options),
@@ -140,7 +163,7 @@ export class GeminiAdapter extends LlmAdapter {
     if (options.provider !== PROVIDER) {
       throw new LlmError(`llm-gemini does not own provider "${options.provider}"`, 'NO_ADAPTER')
     }
-    const def = modelById(options.model)
+    const def = this.modelById(options.model)
     if (def === undefined) throw new LlmError(`llm-gemini has no model "${options.model}"`, 'UNKNOWN_MODEL')
 
     const budget = effortToBudget(options.reasoningEffort, def.reasoning)
@@ -152,14 +175,17 @@ export class GeminiAdapter extends LlmAdapter {
     if (containsImage && attachments === undefined) {
       throw new LlmError('Gemini image input requires the durable attachment service.', 'UNSUPPORTED_CONTENT')
     }
+    const resolveImageAccess: ImageAttachmentAccessResolver = attachments === undefined
+      ? () => undefined
+      : ref => this.options.resolveImageAccess(attachments, ref)
     const prepared = attachments === undefined
       ? { options, images: new Map<AttachmentId, RequestImageAttachment>() }
-      : await prepareGeminiImages(
-        options,
+      : await prepareGeminiImages(options, {
         attachments,
-        this.options.imagePolicy,
-        this.options.maxRequestImageBytes,
-      )
+        resolveImageAccess,
+        budget: this.options.imageBudget,
+        maxRequestImageBytes: this.options.maxRequestImageBytes,
+      })
 
     // Primary transport: the locally installed Antigravity CLI (`agy`), which
     // owns the consumer Google-account login. When the binary is absent, fall
@@ -221,7 +247,7 @@ export class GeminiAdapter extends LlmAdapter {
       return
     }
 
-    yield* this.streamCodeAssist(prepared.options, budget, prepared.images)
+    yield* this.streamCodeAssist(prepared.options, budget, prepared.images, resolveImageAccess)
   }
 
   /** OAuth Code Assist transport: bearer token + `streamGenerateContent` SSE. */
@@ -229,6 +255,7 @@ export class GeminiAdapter extends LlmAdapter {
     options: GenerateOptions,
     budget: ReturnType<typeof effortToBudget>,
     images: ReadonlyMap<AttachmentId, RequestImageAttachment>,
+    resolveImageAccess: ImageAttachmentAccessResolver,
   ): AsyncIterable<StreamChunk> {
     const token = await ensureAccessToken(this.options.ctx, options.signal)
     // The Code Assist project id is resolved once per account and cached in
@@ -245,7 +272,7 @@ export class GeminiAdapter extends LlmAdapter {
     const body = codeAssistEnvelope(
       options.model,
       project,
-      buildRequestBody(options, budget, images),
+      buildRequestBody(options, budget, images, resolveImageAccess),
     )
     const url = codeAssistStreamUrl()
 

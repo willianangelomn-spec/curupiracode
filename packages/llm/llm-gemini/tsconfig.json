@@ -33,10 +33,10 @@
       "path": "../../credentials/authorization"
     },
     {
-      "path": "../../settings/settings"
+      "path": "../../fs/fs"
     },
     {
-      "path": "../../runtime-diagnostics/invariants"
+      "path": "../../../vendor/loader"
     },
     {
       "path": "../../util/timeout"

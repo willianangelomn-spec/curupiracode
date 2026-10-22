@@ -9,15 +9,15 @@
  */
 
 import type {
-  CallId,
   ContentBlock,
   FinishReason,
   GenerateOptions,
+  ImageAttachmentAccessResolver,
   ReasoningEffortId,
   StreamChunk,
   ToolSchema,
 } from '@deepseek-ai/dsh-llm'
-import { LlmError, requestImageHandleText } from '@deepseek-ai/dsh-llm'
+import { LlmError, requestImageHandleText, ToolCallId } from '@deepseek-ai/dsh-llm'
 import type { AttachmentId, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
 import type { GeminiBudget } from './types.ts'
 
@@ -66,27 +66,23 @@ interface GeminiResponse {
   }
 }
 
-/** Flatten text-bearing blocks (recursing into tool results) into one string. */
+/** Join the text blocks of one message. */
 function blockText(blocks: readonly ContentBlock[]): string {
   let out = ''
   for (const block of blocks) {
-    if (block.type === 'text' || block.type === 'reasoning') out += block.text
-    else if (block.type === 'tool-result') out += blockText(block.content)
+    if (block.type === 'text') out += block.text
   }
   return out
 }
 
-/** Append every retained image in one content tree as Gemini inline media. */
+/** Append every retained image in one message as Gemini inline media, each after its handle text. */
 function appendImages(
   blocks: readonly ContentBlock[],
   images: ReadonlyMap<AttachmentId, RequestImageAttachment>,
+  resolveImageAccess: ImageAttachmentAccessResolver,
   parts: GeminiPart[],
 ): void {
   for (const block of blocks) {
-    if (block.type === 'tool-result') {
-      appendImages(block.content, images, parts)
-      continue
-    }
     if (block.type !== 'image') continue
     const image = images.get(block.attachment.attachmentId)
     if (image === undefined) {
@@ -95,7 +91,7 @@ function appendImages(
         'INVALID_REQUEST',
       )
     }
-    parts.push({ text: requestImageHandleText(image) })
+    parts.push({ text: requestImageHandleText(block.attachment, image, resolveImageAccess(block.attachment)) })
     parts.push({
       inlineData: {
         mimeType: image.mediaType,
@@ -131,63 +127,101 @@ export function effortToBudget(effort: ReasoningEffortId | undefined, reasoning:
 }
 
 /**
- * Build a Gemini request body from a provider-neutral request. Tool calls and
- * tool results are correlated by `CallId` so a tool result carries the matching
- * function name Gemini requires.
- * @param options - the harness request.
+ * Build a Gemini request body from a provider-neutral request. Tool-role
+ * messages become `functionResponse` parts carrying the function name of the
+ * assistant tool call they answer; consecutive results share one user turn,
+ * as Gemini expects one response turn per function-call turn. Developer text
+ * becomes user-turn text, and tool-change blocks are omitted because every
+ * request declares its complete tool set.
+ * @param options - the harness request, with offloaded images already projected to text.
  * @param budget - resolved thinking budget, or undefined to disable thinking.
  * @param images - exact request images retained for this call.
+ * @param resolveImageAccess - current tool-world path shown beside each image.
  * @returns the Gemini request body.
  */
 export function buildRequestBody(
   options: GenerateOptions,
   budget: GeminiBudget,
   images: ReadonlyMap<AttachmentId, RequestImageAttachment> = new Map(),
+  resolveImageAccess: ImageAttachmentAccessResolver = () => undefined,
 ): GeminiRequest {
-  const callNameById = new Map<string, string>()
+  const callNameById = new Map<ToolCallId, string>()
   const systemParts: { text: string }[] = []
+  if (options.system !== undefined && options.system.length > 0) systemParts.push({ text: options.system })
   const contents: GeminiContent[] = []
+  const append = (role: GeminiContent['role'], parts: GeminiPart[], merge: boolean): void => {
+    if (parts.length === 0) return
+    const last = contents.at(-1)
+    if (merge && last?.role === role && last.parts.every(part => part.functionResponse !== undefined)) {
+      last.parts.push(...parts)
+      return
+    }
+    contents.push({ role, parts })
+  }
 
   for (const message of options.messages) {
-    if (message.role === 'system') {
-      for (const block of message.content) {
-        if (block.type === 'text') systemParts.push({ text: block.text })
+    switch (message.role) {
+      case 'system':
+        for (const block of message.content) {
+          if (block.type === 'text' && block.text.length > 0) systemParts.push({ text: block.text })
+        }
+        break
+      case 'tool': {
+        const name = callNameById.get(message.toolCallId) ?? 'tool'
+        const result = blockText(message.content)
+        const parts: GeminiPart[] = [{
+          functionResponse: {
+            name,
+            response: message.isError === true ? { error: result } : { result },
+          },
+        }]
+        append('user', parts, true)
+        const media: GeminiPart[] = []
+        appendImages(message.content, images, resolveImageAccess, media)
+        append('user', media, false)
+        break
       }
-      continue
-    }
-    const role: 'user' | 'model' = message.role === 'assistant' ? 'model' : 'user'
-    const parts: GeminiPart[] = []
-    for (const block of message.content) {
-      switch (block.type) {
-        case 'text':
-          parts.push({ text: block.text })
-          break
-        case 'reasoning':
-          parts.push({ thought: true, text: block.text })
-          break
-        case 'image':
-          appendImages([block], images, parts)
-          break
-        case 'tool-call': {
-          callNameById.set(block.id, block.name)
-          let args: unknown = {}
-          try {
-            args = JSON.parse(block.arguments)
-          } catch {
-            args = {}
+      case 'assistant': {
+        const parts: GeminiPart[] = []
+        for (const block of message.content) {
+          switch (block.type) {
+            case 'text':
+              if (block.text.length > 0) parts.push({ text: block.text })
+              break
+            case 'reasoning':
+              // Gemini cannot accept prior thoughts back as input; they stay in the session log.
+              break
+            case 'tool-call': {
+              callNameById.set(block.id, block.name)
+              let args: unknown = {}
+              try {
+                args = JSON.parse(block.arguments)
+              } catch {
+                // A malformed argument string still replays as an empty call.
+                args = {}
+              }
+              parts.push({ functionCall: { name: block.name, args } })
+              break
+            }
+            default:
+              // Other assistant blocks have no Gemini wire representation.
+              break
           }
-          parts.push({ functionCall: { name: block.name, args } })
-          break
         }
-        case 'tool-result': {
-          const name = callNameById.get(block.toolCallId) ?? 'tool'
-          parts.push({ functionResponse: { name, response: { result: blockText(block.content) } } })
-          appendImages(block.content, images, parts)
-          break
+        append('model', parts, false)
+        break
+      }
+      case 'developer':
+      case 'user': {
+        const parts: GeminiPart[] = []
+        for (const block of message.content) {
+          if (block.type === 'text' && block.text.length > 0) parts.push({ text: block.text })
+          else if (block.type === 'image') appendImages([block], images, resolveImageAccess, parts)
         }
+        append('user', parts, false)
+        break
       }
     }
-    if (parts.length > 0) contents.push({ role, parts })
   }
 
   const generationConfig: GeminiRequest['generationConfig'] = {}
@@ -198,9 +232,8 @@ export function buildRequestBody(
 
   const request: GeminiRequest = { contents, generationConfig }
   if (systemParts.length > 0) request.systemInstruction = { parts: systemParts }
-  if (options.tools !== undefined && options.tools.length > 0) {
-    request.tools = [{ functionDeclarations: options.tools.map(toolToDecl) }]
-  }
+  const tools = options.tools?.filter(tool => tool.deferLoading !== true) ?? []
+  if (tools.length > 0) request.tools = [{ functionDeclarations: tools.map(toolToDecl) }]
   return request
 }
 
@@ -227,7 +260,7 @@ export class GeminiStreamConverter {
       for (const part of parts) {
         if (part.functionCall !== undefined) {
           this.sawToolCall = true
-          const id = `gemini-${++this.callSeq}` as CallId
+          const id = ToolCallId(`gemini-${++this.callSeq}`)
           const args = JSON.stringify(part.functionCall.args ?? {})
           const idx = this.index++
           chunks.push({ type: 'block-start', index: idx, blockType: 'tool-call' })

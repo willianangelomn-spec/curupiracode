@@ -1,74 +1,113 @@
 /** Gemini request-image preparation from durable attachment references. @module dsh-llm-gemini/images */
 
-import { offloadRequestImagesWithPolicy } from '@deepseek-ai/dsh-llm'
-import type { ContentBlock, GenerateOptions } from '@deepseek-ai/dsh-llm'
+import {
+  IMAGE_OFFLOAD_REQUIRED_CODE,
+  LlmError,
+  offloadedImageText,
+  projectOffloadedImages,
+  requiredImageOffload,
+} from '@deepseek-ai/dsh-llm'
+import type { ContentBlock, GenerateOptions, ImageAttachmentAccessResolver } from '@deepseek-ai/dsh-llm'
+import { requestImageDimensions } from '@deepseek-ai/dsh-attachment'
 import type {
   AttachmentId,
   AttachmentStore,
   ImageAttachmentRef,
-  ImageRequestPolicy,
+  ImageRequestTarget,
   RequestImageAttachment,
 } from '@deepseek-ai/dsh-attachment'
 
+/** Route-owned budgets from which each Gemini request image's target is derived. */
+export interface GeminiImageBudget {
+  /** Total-pixel budget; larger sources are downscaled proportionally. */
+  maxPixels: number
+  /** Encoded-byte target for one request image. */
+  maxBytes: number
+}
+
+/** Durable image inputs and limits for one Gemini request. */
+export interface GeminiImageRequestContext {
+  /** Durable provider that resolves request-image bytes. */
+  attachments: AttachmentStore
+  /** Resolve the current tool-world path shown beside an image or its placeholder. */
+  resolveImageAccess: ImageAttachmentAccessResolver
+  /** Per-image pixel and encoded-byte budget. */
+  budget: GeminiImageBudget
+  /** Request-level bound on the base64-encoded payload of retained images. */
+  maxRequestImageBytes: number
+}
+
 /** Prepared provider-neutral request plus the exact retained Gemini image versions. */
 export interface PreparedGeminiImages {
-  /** Request whose over-budget oldest images are transient text placeholders. */
+  /** Request whose surface-offloaded image occurrences are text placeholders. */
   options: GenerateOptions
   /** Deterministic request versions keyed by durable attachment id. */
   images: ReadonlyMap<AttachmentId, RequestImageAttachment>
 }
 
-/** Collect unique durable image references in message and nested tool-result order. */
-/* jscpd:ignore-start -- provider-local traversal mirrors the pi-ai adapter boundary */
+/**
+ * Resolve the request target for one source under the route budgets.
+ * @param ref - normalized source image.
+ * @param budget - resolved route pixel and byte limits.
+ * @returns dimensions and byte target used for the request version.
+ */
+export function geminiImageTarget(ref: ImageAttachmentRef, budget: GeminiImageBudget): ImageRequestTarget {
+  return { ...requestImageDimensions(ref.width, ref.height, budget.maxPixels), maxBytes: budget.maxBytes }
+}
+
+/** Collect unique retained durable image references in message order. */
 function collectImageRefs(
   blocks: readonly ContentBlock[],
   refs: Map<AttachmentId, ImageAttachmentRef>,
 ): void {
   for (const block of blocks) {
-    if (block.type === 'image') refs.set(block.attachment.attachmentId, block.attachment)
-    else if (block.type === 'tool-result') collectImageRefs(block.content, refs)
+    if (block.type === 'image' && block.offloaded !== true) refs.set(block.attachment.attachmentId, block.attachment)
   }
 }
-/* jscpd:ignore-end */
 
 /**
  * Derive retained Gemini request images under route-owned pixel and aggregate
- * inline-byte bounds without mutating durable session history.
+ * inline-byte bounds without mutating durable session history. The adapter
+ * never drops an image by itself: when the retained images still exceed the
+ * aggregate bound, the call fails with `IMAGE_OFFLOAD_REQUIRED` naming how many
+ * more oldest occurrences the surface must offload.
  * @param options - complete provider-neutral request.
- * @param attachments - durable attachment resolver.
- * @param policy - deterministic per-image projection limits.
- * @param maxRequestImageBytes - accumulated base64 request-image limit.
- * @returns bounded request messages and their exact image versions.
+ * @param context - attachment provider, path resolver, and request limits.
+ * @returns the request with offloaded placeholders and its exact image versions.
+ * @throws {LlmError} `IMAGE_OFFLOAD_REQUIRED` when the retained images exceed `maxRequestImageBytes`.
  */
 export async function prepareGeminiImages(
   options: GenerateOptions,
-  attachments: AttachmentStore,
-  policy: ImageRequestPolicy,
-  maxRequestImageBytes: number,
+  context: GeminiImageRequestContext,
 ): Promise<PreparedGeminiImages> {
-  const conservative = offloadRequestImagesWithPolicy(options.messages, {
-    representation: 'base64',
-    maxBytes: maxRequestImageBytes,
-    byteQuantum: 1,
-    byteLength: ref => Math.min(ref.bytes, policy.maxBytes),
-  })
   const refs = new Map<AttachmentId, ImageAttachmentRef>()
-  for (const message of conservative) collectImageRefs(message.content, refs)
+  for (const message of options.messages) collectImageRefs(message.content, refs)
   const ordered = [...refs.values()]
   const projected = await Promise.all(ordered.map(
-    ref => attachments.readImageRequest(ref, policy, options.signal),
+    ref => context.attachments.readImageRequest(ref, geminiImageTarget(ref, context.budget), options.signal),
   ))
   const images = new Map(ordered.map((ref, index) => (
     [ref.attachmentId, projected[index] as RequestImageAttachment]
   )))
-  const exact = offloadRequestImagesWithPolicy(conservative, {
-    representation: 'base64',
-    maxBytes: maxRequestImageBytes,
-    byteQuantum: 1,
-    byteLength: ref => (images.get(ref.attachmentId) as RequestImageAttachment).bytes,
-  })
+  const offloadImages = requiredImageOffload(
+    options.messages,
+    { representation: 'base64', maxBytes: context.maxRequestImageBytes },
+    block => (images.get(block.attachment.attachmentId) as RequestImageAttachment).bytes,
+  )
+  if (offloadImages > 0) {
+    throw new LlmError(
+      `Gemini request images exceed the ${context.maxRequestImageBytes}-byte base64 bound; ${offloadImages} more oldest occurrence(s) must be offloaded.`,
+      IMAGE_OFFLOAD_REQUIRED_CODE,
+      { offloadImages },
+    )
+  }
+  const messages = projectOffloadedImages(
+    options.messages,
+    ref => offloadedImageText(ref, context.resolveImageAccess(ref)),
+  )
+  const unchanged = messages.every((message, index) => message === options.messages[index])
   return {
-    options: exact === options.messages ? options : { ...options, messages: [...exact] },
+    options: unchanged ? options : { ...options, messages: [...messages] },
     images,
   }
 }

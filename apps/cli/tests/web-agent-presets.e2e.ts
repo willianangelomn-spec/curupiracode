@@ -46,6 +46,7 @@ const CLAUDE_CODE_PACKAGE_DIR = join(REPO_ROOT, 'packages/subagent/subagent-clau
 /** The installation anchor whose dependency surface the runtime resolution mirrors. */
 const INSTALL_ANCHOR = join(REPO_ROOT, 'apps/cli/package.json')
 const MINIMAL_PROMPT = 'You are a helpful software engineer assistant.'
+const BROWSER_PROMPTS = join(REPO_ROOT, 'packages/bundle/web-app/tests/expected-browser-presets')
 /** Deterministic model responses for the shipped minimal compaction path. */
 class MinimalCompactionAdapter extends LlmAdapter {
   readonly requests: GenerateOptions[] = []
@@ -280,7 +281,7 @@ describe('the shipped Web composition', () => {
   it('supplies both shipped presets, and only those, from the system root', async () => {
     const listed = await ctx.agentPresets.list()
 
-    expect(listed.map(preset => preset.id).sort()).toEqual(['cordis', 'minimal', 'ptc', 'standard'])
+    expect(listed.map(preset => preset.id).sort()).toEqual(['browser', 'browser-chat', 'cordis', 'minimal', 'ptc', 'standard'])
     expect(listed.every(preset => !('path' in preset))).toBe(true)
     expect(ctx.agentPresets.defaultId).toBe('standard')
   })
@@ -298,7 +299,9 @@ describe('the shipped Web composition', () => {
       // depend on ripgrep being present on the machine.
       expect(toolNames(ctx, handle.agent).filter(name => name !== 'glob' && name !== 'grep')).toEqual([
         'ask_user_question', 'bash', 'create_goal', 'edit', 'exit_plan_mode',
-        'get_goal', 'interrupt_agent', 'job_kill', 'job_list', 'job_output', 'list_agents', 'present', 'read', 'read_image',
+        'get_goal', 'interrupt_agent', 'job_kill', 'job_list', 'job_output',
+        'knowledge_documents', 'knowledge_ingest', 'knowledge_related', 'knowledge_search',
+        'list_agents', 'present', 'read', 'read_image',
         'schedule_create', 'schedule_delete', 'schedule_list', 'schedule_update',
         'send_message', 'skill',
         'subagent', 'subagent_fork', 'todo_write', 'update_goal', 'web_fetch', 'web_search',
@@ -367,6 +370,27 @@ describe('the shipped Web composition', () => {
       expect(await ctx.commands.execute(handle.agent, '/compact', [], new AbortController().signal))
         .toMatchObject({ result: { kind: 'success', text: 'No compactable history yet.' } })
       expect(handle.agent.session.snapshotEvents().some(event => event.type === 'compaction/start')).toBe(false)
+    } finally {
+      await handle.dispose()
+    }
+  })
+
+  it.each([
+    ['browser', 'browser-planner-prompt.expected.md'],
+    ['browser-chat', 'browser-chat-prompt.expected.md'],
+  ])('composes the `%s` browser-extension preset without host access tools', async (presetId, expected) => {
+    const handle = await ctx.agents.create({
+      sessionId: SessionId(`preset-${presetId}`),
+      setup: agentCtx => ctx.agentPresets.mount(agentCtx, presetId).then(() => undefined),
+    })
+    try {
+      const assembly = await ctx.systemPrompt.assemble({ scope: handle.agent })
+      expect(assembly.sections).toEqual([{
+        name: 'deployment:persona-prefix',
+        text: (await readFile(join(BROWSER_PROMPTS, expected), 'utf8')).trimEnd(),
+      }])
+      // Only the process-global directory tool remains: no file, shell, web, or vault access.
+      expect(toolNames(ctx, handle.agent)).toEqual(['working_directory'])
     } finally {
       await handle.dispose()
     }

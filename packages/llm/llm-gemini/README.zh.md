@@ -1,59 +1,116 @@
+---
+description: "通过本地已登录的 Antigravity CLI 使用 Google Gemini，面向希望无需 API key 使用 Gemini 4 Argon 等 Gemini 模型的用户，以及适配器的维护者。"
+kind: "package-reference"
+---
+
 # @deepseek-ai/dsh-llm-gemini
 
 [English](README.md) | 中文
 
-DeepSeek Harness LLM 适配器，通过 **Google 账号登录**而不是 API key 提供 Google **Gemini**。其首选传输是本地已安装并完成认证的 Antigravity CLI（`agy`）；当该二进制文件不存在时，已有的 Google OAuth 授权可以提供 Code Assist 回退。
+## 摘要
 
-## 为什么使用独立包
+该适配器通过 **Google 账号登录**而不是 API key 提供 Google **Gemini**。首选传输是本地已安装并完成登录的 Antigravity CLI（`agy`）；当该二进制文件不存在时，已有的 Google OAuth 授权可以提供 Code Assist 回退。`gemini` 路由附带以 Gemini 4 Argon 为首的精选目录，`models` 设置可以加入本地 CLI 接受的任何其他 id。
 
-内置多提供方适配器（`llm-pi-ai`）包含 Google 提供方，但该提供方使用静态 `GEMINI_API_KEY` 认证且不提供登录流程。因此，通过登录使用 Gemini 的功能位于独立适配器中。
+## 目录
 
-## 流程
+- [使用此包](#use-this-package)
+- [理解实现](#understand-the-implementation)
+- [延伸阅读](#further-exploration)
+- [模型体验](#model-experience)
+- [已知限制与后续工作](#known-limitations-and-deferred-work)
+- [开发者备注](#dev-note)
 
-1. 适配器注册 `gemini` 路由、一个可配置提供方目录条目，以及基于精选 Gemini 目录的模型发现。
-2. 文本请求会扁平化为 `agy -p` 提示词。支持图片的模型通过私有临时文件、`@path` 提示词引用和请求级 `--add-dir` 权限接收确定性请求尺寸图片。调用结束后会删除临时文件。
-3. 如果 `agy` 不可用且已有 OAuth 授权，适配器会使用 Code Assist `streamGenerateContent`；图片以 Gemini `inlineData` 发送。
-4. 目录元数据不包含 `image` 输入模态的模型会在提供方执行前拒绝新图片，而不是静默忽略。
+-----
 
-## 配置
+<a id="use-this-package"></a>
+## 使用此包
 
-路由固定为 `gemini`。设置区段（`llm-gemini`）负责提供方重试策略和以下图片限制：
+基础组合包会挂载该适配器，因此 CurupiraCode 安装只需要 CLI：
 
-- `requestImagePixelBudget`：每张请求图片的确定性像素数（默认 `4194304`，即 2048 × 2048）。
-- `requestImageMaxBytes`：每张请求图片的编码字节数（默认 `4194304`）。
-- `maxRequestImageBytes`：请求图片的累计 base64 等效负载（默认 `20971520`）。超出限制的最旧图片会变成稳定文本占位符，而不会改变持久历史。
+1. 安装 Antigravity CLI，并在终端运行一次 `agy`，用 Google 账号登录。
+2. 在模型选择器中选择 **Google Gemini** 提供方的模型。
 
-### OAuth 客户端 id
-
-默认客户端 id 是 Generative Language API 使用的公开 Google 客户端。每个部署可通过以下变量覆盖：
-
-```sh
-GEMINI_OAUTH_CLIENT_ID=your-oauth-client-id
+```yaml
+- id: llm-gemini
+  name: '@deepseek-ai/dsh-llm-gemini'
+  config:
+    # 本地 CLI 接受的额外 id（用 `agy models` 列出）。
+    models:
+      - id: claude-opus-5-5-thinking
+        name: Claude Opus 5.5 (Thinking)
 ```
 
-## 支持的模型
+### 选择模型
 
-精选目录遵循 `agy` 提供的模型：Gemini 3.7 Flash、Gemini 3.6 Flash、Gemini 3.5 Flash 和 Gemini 3.1 Pro 变体。这些 Gemini 条目声明支持文本和图片输入。Claude 或 GPT-OSS 等目录条目保持仅支持文本，除非其传输已明确验证图片能力。
+内置目录遵循 `agy`，推理强度是 id 的一部分：Gemini 4 Argon（`gemini-4-argon-high`、`-medium`、`-low`）、Gemini 3.8 Flash、Gemini 3.7 Flash、Gemini 3.6 Flash、Gemini 3.5 Flash、Gemini 3.1 Pro，以及编写目录时 CLI 提供的 Claude 和 GPT-OSS id。Gemini 条目接受文本和图片输入；其他条目仅支持文本。可用的 id 取决于你的 Google 方案和 CLI 版本：Gemini 4 Argon 需要 agy 1.4.3 或更高版本以及包含该模型的方案。agy 不认识某个 id 时会静默改用默认模型作答；适配器会以 `UNKNOWN_MODEL` 拒绝该回答，并说明如何修复。
 
+### 配置
+
+| 字段 | 默认值 | 含义 |
+|---|---|---|
+| `models` | `[]` | 加入目录的模型；与内置 id 相同的条目会原位替换。每个条目包含 `id`，以及可选的 `name`、`contextWindow`（默认 1,048,576）和 `images`（默认 false）。 |
+| `requestImagePixelBudget` | `4194304` | 每张请求图片的像素数（2048 × 2048）。 |
+| `requestImageMaxBytes` | `4194304` | 每张请求图片的编码字节数。 |
+| `maxRequestImageBytes` | `20971520` | 每个请求的 base64 图片负载；超出时请求会要求对话卸载最旧的图片。 |
+| `retryPolicy` | `null` | 提供方自有的重试策略；`null` 使用重试五次的普通模式。 |
+
+`GEMINI_AGY_BINARY` 覆盖 CLI 路径（默认 `~/.local/bin/agy`），`GEMINI_OAUTH_CLIENT_ID` 覆盖回退传输的 OAuth 客户端。
+
+-----
+
+<a id="understand-the-implementation"></a>
+## 理解实现
+
+<details>
+<summary>实现内部细节——点击展开</summary>
+
+[`index.ts`](src/index.ts) 注册 `gemini` 路由、其可配置提供方目录条目、基于有效目录的模型发现，以及授权接缝上的 Google 登录流程。[`agy.ts`](src/agy.ts) 把请求扁平化为一个 `agy -p` 提示词，把请求图片暂存为私有临时文件，以 `@path` 引用并通过 `--add-dir` 授权，然后解析 JSON 结果。[`convert.ts`](src/convert.ts) 为回退构建 Code Assist `streamGenerateContent` 请求体：tool 角色消息成为以所回答的助手调用命名的 `functionResponse` 部分，连续结果共用一个轮次，图片以 `inlineData` 发送。[`images.ts`](src/images.ts) 读取确定性的请求版本，并与其他适配器一样以 `IMAGE_OFFLOAD_REQUIRED` 失败，而不是自行丢弃图片。[`models.ts`](src/models.ts) 保存内置目录，并把配置的模型合并到其上。
+
+</details>
+
+-----
+
+<a id="further-exploration"></a>
+## 延伸阅读
+
+- [llm](../llm/README.zh.md)——提供方中立的请求词汇和适配器契约。
+- [llm-pi-ai](../llm-pi-ai/README.zh.md)——通过 pi-ai 的 `google` 提供方使用 `GEMINI_API_KEY` 访问 Gemini。
+- [authorization](../../credentials/authorization/README.zh.md)——承载回退登录流程的接缝。
+
+-----
+
+<a id="model-experience"></a>
 ## 模型体验
 
 ### Gemini 请求
 
 #### 模型所见
 
-选中的 Gemini 模型会收到扁平化的系统提示词和对话，每张保留图片位于原始逻辑位置。`agy` 传输看到私有 `@path` 引用，OAuth 回退则接收 `inlineData`。每张图片前都有稳定附件句柄和实际请求尺寸。超过总量限制的图片会变成确定性占位符，而不会被静默丢弃。
+通过 `agy` 时，模型收到一个扁平化提示词：先是系统文本，然后是按角色标注的对话，每张保留图片在原始位置以私有 `@path` 引用。通过回退时，模型收到包含系统指令、`functionCall` 与 `functionResponse` 配对以及 `inlineData` 图片的 Gemini `contents`。每张图片前都有稳定附件句柄和请求尺寸；对话已卸载的图片显示为确定性占位符。
 
 #### Token 影响
 
-Gemini 决定精确的文本和图片 token 化。保留图片消耗视觉 token；稳定句柄增加少量文本成本，已卸载占位符则避免重复发送较旧的视觉内容。
+Gemini 决定文本和图片的 token 化。保留图片消耗视觉 token；句柄增加少量文本成本，占位符则避免重复发送较旧的图片。
 
 #### KV Cache 影响
 
-未变化的请求前缀和确定性图片投影可以继续符合提供方缓存复用条件。更改模型、提示词、图片策略或更早消息，可能从第一个变化位置起阻止复用。
+未变化的请求前缀和确定性图片投影可继续符合提供方缓存复用条件。更改模型、提示词、图片策略或更早消息，会从第一个变化位置起阻止复用。
 
 ## 已知限制与后续工作
 
-- 首选传输需要可用的本地 `agy` 安装和 Google 登录。在新计算机上安装 CurupiraCode 后先运行一次 `agy`。
-- 共享附件层完成规范化和限制后，请求可以引用 PNG、JPEG、WebP 和 GIF 附件。
-- 当前 Antigravity 目录接受图片输入，但只返回文本输出。原生图片生成需要独立的 Gemini 图片模型和 API 传输。
-- 该适配器是 `llm-pi-ai` 的同级包；两者都由基础组合包挂载。
+<a id="known-limitations-and-deferred-work"></a>
+
+- **agy 传输只返回文本**——CLI 运行自己的智能体并返回一段最终文本，因此由 `agy` 服务的 Gemini 会话不提供 harness 工具（文件、shell、网络）；Code Assist 回退可以携带函数调用。
+- **登录在终端中完成**——注册在授权接缝上的 Google 登录流程在 Web 客户端中还没有入口；运行 `agy` 登录。
+- **目录为手写**——id 遵循编写时的 `agy models`；更新的 id 通过 `models` 加入。
+- **图片只作为输入**——原生图片生成需要独立的 Gemini 图片模型和传输。
+
+<a id="dev-note"></a>
+### 开发者备注
+
+<details>
+<summary>维护者工作上下文——点击展开</summary>
+
+- 待 `agy models` 的输出格式有文档后，在发现阶段解析它即可去掉手写目录。
+
+</details>
