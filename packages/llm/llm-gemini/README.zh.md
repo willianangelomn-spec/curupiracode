@@ -36,13 +36,14 @@ kind: "package-reference"
   config:
     # Extra ids the local CLI accepts (list them with `agy models`).
     models:
-      - id: claude-opus-5-5-thinking
-        name: Claude Opus 5.5 (Thinking)
+      - id: gemini-3.1-pro-high
+        name: Gemini 3.1 Pro (High)
+        images: true
 ```
 
 ### 选择模型
 
-内置目录遵循 `agy`，推理强度是 id 的一部分：Gemini 4 Argon（`gemini-4-argon-high`、`-medium`、`-low`）、Gemini 3.8 Flash、Gemini 3.7 Flash、Gemini 3.6 Flash、Gemini 3.5 Flash、Gemini 3.1 Pro，以及编写目录时 CLI 提供的 Claude 和 GPT-OSS id。Gemini 条目接受文本和图片输入；其他条目仅支持文本。可用的 id 取决于你的 Google 方案和 CLI 版本：Gemini 4 Argon 需要 agy 1.4.3 或更高版本以及包含该模型的方案，并且只在 agy harness 内运行，因此从不使用 Code Assist 回退。agy 不认识某个 id 时会静默改用默认模型作答；适配器会以 `UNKNOWN_MODEL` 拒绝该回答，并说明如何修复。agy 没有 Google 登录时会等待一分钟后退出；适配器随后以 `SIGN_IN_REQUIRED` 失败，并提示你在终端运行 `agy`。
+内置目录遵循 agy 1.4.5 的 `agy models`，推理强度是 id 的一部分：Gemini 4 Argon（`gemini-4-argon-high`、`-medium`、`-low`）、Gemini 3.8 Flash、Claude Opus 5.5、Claude Sonnet 5.5，各有 high、medium 和 low 三档，另有 GPT-OSS 120B (Medium)。Gemini 条目接受文本和图片输入；其他条目仅支持文本。可用的 id 取决于你的 Google 方案和 CLI 版本：Gemini 4 Argon 需要 agy 1.4.3 或更高版本以及包含该模型的方案，并且只在 agy harness 内运行，因此从不使用 Code Assist 回退。agy 不认识某个 id 时会静默改用默认模型作答；适配器会以 `UNKNOWN_MODEL` 拒绝该回答，并说明如何修复。agy 没有 Google 登录时会等待一分钟后退出；适配器随后以 `SIGN_IN_REQUIRED` 失败，并提示你在终端运行 `agy`。
 
 ### 配置
 
@@ -86,7 +87,7 @@ kind: "package-reference"
 
 #### 模型所见
 
-通过 `agy` 时，模型收到一个扁平化提示词：先是系统文本，然后是按角色标注的对话，每张保留图片在原始位置以私有 `@path` 引用。通过回退时，模型收到包含系统指令、`functionCall` 与 `functionResponse` 配对以及 `inlineData` 图片的 Gemini `contents`。每张图片前都有稳定附件句柄和请求尺寸；对话已卸载的图片显示为确定性占位符。
+通过 `agy` 时，模型收到一个扁平化提示词：先是一段固定的葡萄牙语开头，说明它作为 CurupiraCode 的模型作答、必须回答最后一条人类消息，并且此传输中没有工具；然后是应用的系统文本；然后是对话，其中只有来自人类的 user 消息标为 `Usuário`，其他插件以 user 角色注入的上下文标为 `Contexto do aplicativo`。每张保留图片在原始位置以私有 `@path` 引用。agy 会在此提示词之外加上它自己的智能体指令和用户的 agy 规则。通过回退时，模型收到包含系统指令、`functionCall` 与 `functionResponse` 配对以及 `inlineData` 图片的 Gemini `contents`。每张图片前都有稳定附件句柄和请求尺寸；对话已卸载的图片显示为确定性占位符。
 
 #### Token 影响
 

@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { GenerateOptions, Message } from '@deepseek-ai/dsh-llm'
 import type { ImageAttachmentRef, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
-import { agyBinary, flattenPrompt, generateViaAgy, prepareAgyPrompt } from '../src/agy.ts'
+import { AGY_FRAMING, agyBinary, flattenPrompt, generateViaAgy, prepareAgyPrompt } from '../src/agy.ts'
 
 const ref: ImageAttachmentRef = {
   attachmentId: 'sha256:agy-image' as ImageAttachmentRef['attachmentId'],
@@ -24,7 +24,7 @@ function options(): GenerateOptions {
     ],
     source: { kind: 'user' },
   } as unknown as Message
-  return { provider: 'gemini', model: 'gemini-3.1-pro-high', messages: [message] }
+  return { provider: 'gemini', model: 'gemini-3.8-flash-high', messages: [message] }
 }
 
 function image(): RequestImageAttachment {
@@ -41,6 +41,17 @@ function image(): RequestImageAttachment {
     hasAlpha: false,
   }
 }
+
+describe('Antigravity prompt', () => {
+  it('frames agy as the application model and separates application context from the human', () => {
+    const human = { ...options().messages[0], content: [{ type: 'text', text: 'oi me responda' }] } as Message
+    const context = { ...human, source: { kind: 'runtime-context' }, content: [{ type: 'text', text: 'Current working directory: "/w".' }] } as Message
+    const prompt = flattenPrompt({ provider: 'gemini', model: 'gemini-4-argon-low', system: 'Be brief.', messages: [human, context] })
+    expect(prompt.startsWith(AGY_FRAMING)).toBe(true)
+    expect(prompt).toContain('Instruções do aplicativo:\n\nBe brief.')
+    expect(prompt).toContain('Conversa:\n\nUsuário: oi me responda\n\nContexto do aplicativo: Current working directory: "/w".')
+  })
+})
 
 describe('Antigravity image prompt', () => {
   it('refuses to flatten an unstaged image instead of silently dropping it', () => {

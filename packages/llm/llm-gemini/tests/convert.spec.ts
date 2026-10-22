@@ -40,7 +40,7 @@ function assistantToolCall(): Message {
     id: 'a1' as Message['id'],
     role: 'assistant',
     content: [{ type: 'tool-call', id: 'c1' as never, name: 'getWeather', arguments: '{"city":"Paris"}' }],
-    source: { kind: 'model', provider: 'gemini', model: 'gemini-3.1-pro-high' },
+    source: { kind: 'model', provider: 'gemini', model: 'gemini-3.8-flash-high' },
   } as unknown as Message
 }
 
@@ -58,7 +58,7 @@ function toolResult(callId = 'c1', text = 'sunny', isError = false): Message {
 function baseOptions(messages: Message[]): GenerateOptions {
   return {
     provider: 'gemini',
-    model: 'gemini-3.1-pro-high',
+    model: 'gemini-3.8-flash-high',
     messages,
   }
 }
@@ -67,8 +67,8 @@ describe('catalog', () => {
   const byId = (id: string) => GEMINI_MODELS.find(model => model.id === id)
 
   it('lists curated models with context windows', () => {
-    expect(byId('gemini-3.1-pro-high')?.contextWindow).toBe(1_048_576)
-    expect(byId('gemini-3.1-pro-high')?.inputModalities).toEqual(['text', 'image'])
+    expect(byId('gemini-3.8-flash-high')?.contextWindow).toBe(1_048_576)
+    expect(byId('gemini-3.8-flash-high')?.inputModalities).toEqual(['text', 'image'])
   })
 
   it('offers Gemini 4 Argon at every agy effort first', () => {

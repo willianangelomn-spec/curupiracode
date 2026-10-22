@@ -36,6 +36,7 @@ export { Config } from './config.ts'
 export type { GeminiModelConfig } from './config.ts'
 export { GeminiAdapter, PROVIDER, PROVIDER_NAME } from './adapter.ts'
 export { GEMINI_MODELS } from './models.ts'
+export { agyBinary } from './agy.ts'
 export type { GeminiModelDef, GeminiGrant } from './types.ts'
 
 /** Plugin id; also the settings namespace and the registered provider route. */

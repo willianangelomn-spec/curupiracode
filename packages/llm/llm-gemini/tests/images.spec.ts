@@ -54,7 +54,7 @@ describe('prepareGeminiImages', () => {
     const readImageRequest = vi.fn(async (attachment: ImageAttachmentRef) => requestImage(attachment))
     const options = {
       provider: 'gemini',
-      model: 'gemini-3.1-pro-high',
+      model: 'gemini-3.8-flash-high',
       messages: [message(first, second)],
     } as GenerateOptions
     const prepared = await prepareGeminiImages(options, context(readImageRequest, 100))
@@ -70,7 +70,7 @@ describe('prepareGeminiImages', () => {
     const readImageRequest = vi.fn(async (attachment: ImageAttachmentRef) => requestImage(attachment))
     const options = {
       provider: 'gemini',
-      model: 'gemini-3.1-pro-high',
+      model: 'gemini-3.8-flash-high',
       messages: [message(first, second)],
     } as GenerateOptions
     // Each 3-byte version is 4 base64 bytes; a 5-byte bound keeps only one.
@@ -88,7 +88,7 @@ describe('prepareGeminiImages', () => {
     offloaded.content[0] = { ...offloaded.content[0], offloaded: true }
     const options = {
       provider: 'gemini',
-      model: 'gemini-3.1-pro-high',
+      model: 'gemini-3.8-flash-high',
       messages: [offloaded as unknown as Message],
     } as GenerateOptions
     const prepared = await prepareGeminiImages(options, context(readImageRequest, 100))

@@ -87,9 +87,38 @@ function blockText(
 }
 
 /**
+ * Opening of every agy prompt. agy runs its own agent with its own tools, so
+ * the request states that agy serves here as the model of another application:
+ * the tools the application's instructions name do not exist in this transport,
+ * and application context is environment data rather than something the human said.
+ */
+export const AGY_FRAMING = [
+  'Você está respondendo como o modelo de linguagem do aplicativo CurupiraCode, por meio do Antigravity CLI.',
+  'Responda diretamente à última mensagem do Usuário na conversa abaixo, no idioma dela.',
+  'Não use ferramentas, não leia nem altere arquivos e não execute comandos: as ferramentas citadas nas instruções do aplicativo não estão disponíveis neste modo.',
+  'Blocos marcados como "Contexto do aplicativo" descrevem o ambiente; não são pedidos do usuário.',
+].join('\n')
+
+/** Transcript label of one message: the human, the assistant, a tool result, or application context. */
+function speaker(message: GenerateOptions['messages'][number]): string {
+  switch (message.role) {
+    case 'assistant': return 'Assistente'
+    case 'tool': return 'Resultado de ferramenta'
+    case 'system':
+    case 'developer': return 'Contexto do aplicativo'
+    // Only a human-sourced user message is the human speaking; other producers inject context in the user role.
+    case 'user': return message.source === undefined || message.source.kind === 'user' ? 'Usuário' : 'Contexto do aplicativo'
+  }
+}
+
+/**
  * Flatten a provider-neutral request into the single prompt string `agy -p`
- * consumes: system text first, then the conversation turns. Reasoning blocks
- * are internal scratch space and are skipped.
+ * consumes: {@link AGY_FRAMING}, the application's system text, then the
+ * conversation with each message labelled by speaker. Reasoning blocks are
+ * internal scratch space and are skipped.
+ * @param options - bounded provider-neutral request.
+ * @param imagePaths - staged path of each image attachment the request carries.
+ * @returns the prompt text.
  */
 export function flattenPrompt(
   options: GenerateOptions,
@@ -105,16 +134,12 @@ export function flattenPrompt(
       }
       continue
     }
-    const who = message.role === 'assistant' ? 'Assistente'
-      : message.role === 'tool' ? 'Resultado de ferramenta'
-        : message.role === 'developer' ? 'Sistema'
-          : 'Usuário'
     const text = blockText(message.content, imagePaths)
-    if (text.length > 0) turns.push(`${who}: ${text}`)
+    if (text.length > 0) turns.push(`${speaker(message)}: ${text}`)
   }
-  const sections: string[] = []
-  if (system.length > 0) sections.push(system.join('\n\n'))
-  if (turns.length > 0) sections.push(turns.join('\n\n'))
+  const sections: string[] = [AGY_FRAMING]
+  if (system.length > 0) sections.push(`Instruções do aplicativo:\n\n${system.join('\n\n')}`)
+  if (turns.length > 0) sections.push(`Conversa:\n\n${turns.join('\n\n')}`)
   return sections.join('\n\n---\n\n')
 }
 

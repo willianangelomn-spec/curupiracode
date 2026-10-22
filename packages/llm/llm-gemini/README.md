@@ -36,13 +36,14 @@ The base bundle mounts the adapter, so a CurupiraCode installation only needs th
   config:
     # Extra ids the local CLI accepts (list them with `agy models`).
     models:
-      - id: claude-opus-5-5-thinking
-        name: Claude Opus 5.5 (Thinking)
+      - id: gemini-3.1-pro-high
+        name: Gemini 3.1 Pro (High)
+        images: true
 ```
 
 ### Choose a model
 
-The shipped catalog follows `agy`, where the reasoning effort is part of the id: Gemini 4 Argon (`gemini-4-argon-high`, `-medium`, `-low`), Gemini 3.8 Flash, Gemini 3.7 Flash, Gemini 3.6 Flash, Gemini 3.5 Flash, Gemini 3.1 Pro, plus the Claude and GPT-OSS ids the CLI offered when the catalog was written. Gemini entries accept text and image input; the others are text-only. Which ids work depends on your Google plan and CLI version: Gemini 4 Argon needs agy 1.4.3 or later and a plan that includes it, and it runs only inside the agy harness, so it never uses the Code Assist fallback. When agy does not recognize an id it would silently answer with its default model; the adapter refuses that answer with `UNKNOWN_MODEL` and says how to fix it. When agy has no Google sign-in it waits a minute for one and exits; the adapter then fails with `SIGN_IN_REQUIRED` and asks you to run `agy` in a terminal.
+The shipped catalog follows `agy models` of agy 1.4.5, where the reasoning effort is part of the id: Gemini 4 Argon (`gemini-4-argon-high`, `-medium`, `-low`), Gemini 3.8 Flash, Claude Opus 5.5, Claude Sonnet 5.5, each at high, medium, and low effort, and GPT-OSS 120B (Medium). Gemini entries accept text and image input; the others are text-only. Which ids work depends on your Google plan and CLI version: Gemini 4 Argon needs agy 1.4.3 or later and a plan that includes it, and it runs only inside the agy harness, so it never uses the Code Assist fallback. When agy does not recognize an id it would silently answer with its default model; the adapter refuses that answer with `UNKNOWN_MODEL` and says how to fix it. When agy has no Google sign-in it waits a minute for one and exits; the adapter then fails with `SIGN_IN_REQUIRED` and asks you to run `agy` in a terminal.
 
 ### Configure
 
@@ -86,7 +87,7 @@ The adapter runs `GEMINI_AGY_BINARY` when it is set, otherwise the installer's `
 
 #### What the model sees
 
-Through `agy`, the model receives one flattened prompt: system text, then the conversation labelled by role, with each retained image referenced by a private `@path` at its original position. Through the fallback, it receives Gemini `contents` with the system instruction, `functionCall` and `functionResponse` pairs, and `inlineData` images. Every image is preceded by its stable attachment handle and request dimensions; images the conversation offloaded appear as deterministic placeholders.
+Through `agy`, the model receives one flattened prompt: a fixed Portuguese opening saying that it answers as CurupiraCode's model, must answer the last human message, and has no tools in this transport; then the application's system text; then the conversation, where only human-sourced user messages are labelled `Usuário` and context that other plugins inject in the user role is labelled `Contexto do aplicativo`. Each retained image is referenced by a private `@path` at its original position. agy adds its own agent instructions and the user's agy rules around this prompt. Through the fallback, it receives Gemini `contents` with the system instruction, `functionCall` and `functionResponse` pairs, and `inlineData` images. Every image is preceded by its stable attachment handle and request dimensions; images the conversation offloaded appear as deterministic placeholders.
 
 #### Token effect
 
